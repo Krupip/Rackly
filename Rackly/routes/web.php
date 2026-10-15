@@ -48,6 +48,10 @@ Route::middleware('auth')->group(function () {
     // Rute Pengaturan Admin
     Route::get('/admin/settings', [AdminSettingController::class, 'index'])->name('admin.settings');
     Route::patch('/admin/settings', [AdminSettingController::class, 'update'])->name('admin.settings.update');
+
+    // Rute Kelola Pesanan Admin
+    Route::get('/admin/bookings', [AdminController::class, 'bookings'])->name('admin.bookings');
+    Route::post('/admin/bookings/{booking}/confirm', [AdminController::class, 'confirmFullPayment'])->name('admin.bookings.confirm');
 });
 
 require __DIR__ . '/auth.php';

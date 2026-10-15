@@ -32,6 +32,16 @@
                     Dashboard
                 </a>
 
+                <a href="{{ route('admin.bookings') }}"
+                    class="block px-4 py-2 rounded-md transition duration-200 {{ request()->routeIs('admin.bookings*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} flex gap-2">
+                    <svg xmlns="http://w3.org" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+                        <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+                        <path d="M9 12h6M9 16h4"></path>
+                    </svg>
+                    Kelola Pesanan
+                </a>
+
                 <a href="{{ route('tables.index') }}"
                     class="block px-4 py-2 rounded-md transition duration-200 {{ request()->routeIs('tables.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} flex gap-2">
                     <svg xmlns="http://w3.org" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

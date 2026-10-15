@@ -175,10 +175,13 @@ class BookingController extends Controller
             if ($payment) {
                 $transactionStatus = $request->transaction_status;
 
-                // Jika status sukses (settlement/capture)
+                // Jika status sukses (settlement/capture) → DP lunas
                 if ($transactionStatus == 'settlement' || $transactionStatus == 'capture') {
                     $payment->update(['transaction_status' => 'paid']);
-                    $payment->booking->update(['status' => 'paid']);
+                    $payment->booking->update([
+                        'status'      => 'dp_lunas',
+                        'paid_amount' => $payment->booking->dp_amount,
+                    ]);
                 }
                 // Jika dibatalkan atau kadaluarsa
                 else if ($transactionStatus == 'cancel' || $transactionStatus == 'expire' || $transactionStatus == 'deny') {

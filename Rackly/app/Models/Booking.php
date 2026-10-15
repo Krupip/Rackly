@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'end_time',
     'total_price',
     'dp_amount',
+    'paid_amount',
     'status',
 ])]
 class Booking extends Model

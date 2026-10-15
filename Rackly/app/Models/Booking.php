@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'user_id',
+    'guest_name',
+    'is_walkin',
     'billiard_table_id',
     'start_time',
     'end_time',

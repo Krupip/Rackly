@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Admin Panel - CueReserve')</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js untuk fitur interaktif & kalkulator harga -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 <body class="bg-gray-100 font-sans antialiased">
@@ -40,6 +42,14 @@
                         <path d="M9 12h6M9 16h4"></path>
                     </svg>
                     Kelola Pesanan
+                </a>
+
+                <a href="{{ route('admin.walkin.create') }}"
+                    class="block px-4 py-2 rounded-md transition duration-200 {{ request()->routeIs('admin.walkin*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }} flex gap-2">
+                    <svg xmlns="http://w3.org" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Tambah Walk-in
                 </a>
 
                 <a href="{{ route('tables.index') }}"

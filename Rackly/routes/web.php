@@ -52,6 +52,10 @@ Route::middleware('auth')->group(function () {
     // Rute Kelola Pesanan Admin
     Route::get('/admin/bookings', [AdminController::class, 'bookings'])->name('admin.bookings');
     Route::post('/admin/bookings/{booking}/confirm', [AdminController::class, 'confirmFullPayment'])->name('admin.bookings.confirm');
+
+    // Rute Walk-in (Pesanan Langsung di Kasir)
+    Route::get('/admin/walkin/create', [AdminController::class, 'createWalkIn'])->name('admin.walkin.create');
+    Route::post('/admin/walkin', [AdminController::class, 'storeWalkIn'])->name('admin.walkin.store');
 });
 
 require __DIR__ . '/auth.php';

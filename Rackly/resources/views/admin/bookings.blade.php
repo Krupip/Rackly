@@ -43,8 +43,13 @@
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-5 py-4 text-sm text-gray-600">#{{ $booking->id }}</td>
                         <td class="px-5 py-4">
-                            <div class="text-sm font-medium text-gray-900">{{ $booking->user->name ?? 'Guest' }}</div>
-                            <div class="text-xs text-gray-400">{{ $booking->user->email ?? '-' }}</div>
+                            @if($booking->is_walkin)
+                                <div class="text-sm font-medium text-gray-900">{{ $booking->guest_name }}</div>
+                                <span class="inline-flex text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">Walk-in</span>
+                            @else
+                                <div class="text-sm font-medium text-gray-900">{{ $booking->user->name ?? 'User Dihapus' }}</div>
+                                <div class="text-xs text-gray-400">{{ $booking->user->email ?? '-' }}</div>
+                            @endif
                         </td>
                         <td class="px-5 py-4">
                             <div class="text-sm font-bold text-blue-600">{{ $booking->billiardTable->table_number ?? '-' }}</div>

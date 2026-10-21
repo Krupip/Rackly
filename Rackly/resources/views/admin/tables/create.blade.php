@@ -1,73 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts.admin')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Meja - Admin CueReserve</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
+@section('title', 'Tambah Meja — Admin Rackly Billiard')
+@section('breadcrumb', 'Operasional / Kelola meja / Tambah')
 
-<body class="bg-gray-100">
-    @extends('layouts.admin')
-
-    @section('title', 'Tambah Meja - Admin CueReserve')
-
-    @section('content')
-    <div class="flex items-center mb-6">
-        <a href="{{ route('tables.index') }}" class="text-blue-600 hover:text-blue-800 font-medium mr-4">
-            &larr; Kembali
+@section('content')
+<div class="max-w-2xl space-y-6">
+    <div class="flex items-center gap-4">
+        <a href="{{ route('tables.index') }}" class="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
         </a>
-        <h1 class="text-3xl font-bold text-gray-900">Tambah Meja Baru</h1>
+        <div>
+            <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Tambah Meja Baru</h1>
+            <p class="text-xs text-gray-500">Daftarkan unit meja biliar baru ke sistem Rackly.</p>
+        </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden p-6 max-w-3xl">
-        <form action="{{ route('tables.store') }}" method="POST">
+    <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6 sm:p-8">
+        <form action="{{ route('tables.store') }}" method="POST" class="space-y-5">
             @csrf
 
             <!-- Nama / Nomor Meja -->
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="table_number">Nama / Nomor Meja</label>
-                <input type="text" name="table_number" id="table_number" required placeholder="Contoh: Meja 04"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring focus:border-blue-300">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2" for="table_number">
+                    Nama / Nomor Meja <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="table_number" id="table_number" required placeholder="Contoh: Meja 09"
+                       value="{{ old('table_number') }}"
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                @error('table_number')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <!-- Tipe Meja -->
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="type">Tipe Meja</label>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2" for="type">
+                    Jenis Meja <span class="text-red-500">*</span>
+                </label>
                 <select name="type" id="type" required
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring focus:border-blue-300">
-                    <option value="Pool">Pool</option>
-                    <option value="Snooker">Snooker</option>
-                    <option value="Carom">Carom</option>
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                    <option value="Reguler">Reguler</option>
+                    <option value="VIP">VIP</option>
                 </select>
+                @error('type')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <!-- Harga Per Jam -->
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="price_per_hour">Harga Sewa Per Jam (Rp)</label>
-                <input type="number" name="price_per_hour" id="price_per_hour" required min="0" placeholder="Contoh: 50000"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring focus:border-blue-300">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2" for="price_per_hour">
+                    Harga Sewa Per Jam (Rp) <span class="text-red-500">*</span>
+                </label>
+                <input type="number" name="price_per_hour" id="price_per_hour" required min="0" placeholder="Contoh: 80000"
+                       value="{{ old('price_per_hour', 80000) }}"
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                @error('price_per_hour')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <!-- Status -->
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="is_active">Status Meja</label>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2" for="is_active">
+                    Status Operasional <span class="text-red-500">*</span>
+                </label>
                 <select name="is_active" id="is_active" required
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring focus:border-blue-300">
-                    <option value="1">Tersedia</option>
-                    <option value="0">Maintenance</option>
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                    <option value="1">Aktif (Tersedia untuk Booking)</option>
+                    <option value="0">Perawatan (Maintenance)</option>
                 </select>
             </div>
 
-            <div class="flex items-center justify-end mt-8">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow focus:outline-none focus:shadow-outline">
-                    Simpan Data
+            <div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+                <a href="{{ route('tables.index') }}" class="px-5 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 transition">
+                    Batal
+                </a>
+                <button type="submit" class="px-6 py-2.5 bg-[#1B5E43] hover:bg-[#154b35] text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Simpan Meja
                 </button>
             </div>
         </form>
     </div>
-    @endsection
-</body>
-
-</html>
+</div>
+@endsection

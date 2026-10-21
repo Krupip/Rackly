@@ -33,7 +33,21 @@ class BookingController extends Controller
         }
 
         $dpPercentage = (int) Setting::get('dp_percentage', 30);
-        return view('booking.create', compact('billiardTable', 'dpPercentage'));
+
+        // Ambil booking aktif yang sudah ada untuk meja ini
+        $existingBookings = Booking::where('billiard_table_id', $billiardTable->id)
+            ->whereIn('status', ['pending', 'dp_lunas', 'lunas'])
+            ->whereDate('start_time', '>=', Carbon::today())
+            ->get(['start_time', 'end_time'])
+            ->map(function ($b) {
+                return [
+                    'date' => Carbon::parse($b->start_time)->format('Y-m-d'),
+                    'start' => Carbon::parse($b->start_time)->format('H:i'),
+                    'end' => Carbon::parse($b->end_time)->format('H:i'),
+                ];
+            });
+
+        return view('booking.create', compact('billiardTable', 'dpPercentage', 'existingBookings'));
     }
 
     public function store(Request $request)
@@ -42,11 +56,12 @@ class BookingController extends Controller
         $request->validate([
             'table_id' => 'required|exists:billiard_tables,id',
             'booking_date' => 'required|date|after_or_equal:today',
-            'start_time' => 'required|date_format:H:00',
-            'end_time' => 'required|date_format:H:00|after:start_time',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
         ], [
-            'start_time.date_format' => 'Jam mulai harus berupa jam bulat (contoh: 13:00).',
-            'end_time.date_format' => 'Jam selesai harus berupa jam bulat (contoh: 15:00).',
+            'start_time.date_format' => 'Jam mulai harus berupa format jam (contoh: 13:00).',
+            'end_time.date_format' => 'Jam selesai harus berupa format jam (contoh: 15:00).',
+            'end_time.after' => 'Jam selesai harus lebih besar dari jam mulai.',
         ]);
 
         $table = \App\Models\BilliardTable::findOrFail($request->table_id);
@@ -57,7 +72,7 @@ class BookingController extends Controller
 
         // 2. Cek Jadwal Bentrok (Mencegah Double Booking / Overlapping)
         $isConflict = \App\Models\Booking::where('billiard_table_id', $table->id)
-            ->whereIn('status', ['pending', 'paid'])
+            ->whereIn('status', ['pending', 'dp_lunas', 'lunas', 'paid'])
             ->where(function ($query) use ($start, $end) {
                 // Logika Estafet: Izinkan booking jika jam mulai = jam selesai orang lain
                 $query->where('start_time', '<', $end)
@@ -127,7 +142,7 @@ class BookingController extends Controller
         $payment->update(['snap_token' => $snapToken]);
 
         // 9. Arahkan ke halaman Checkout (Pastikan nama foldernya 'bookings' pakai s)
-        return view('booking.checkout', compact('booking', 'payment', 'snapToken'));
+        return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpPercentage'));
     }
 
     // Melanjutkan pembayaran dari riwayat
@@ -140,8 +155,9 @@ class BookingController extends Controller
 
         $payment = $booking->payment;
         $snapToken = $payment->snap_token;
+        $dpPercentage = (int) Setting::get('dp_percentage', 30);
 
-        return view('booking.checkout', compact('booking', 'payment', 'snapToken'));
+        return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpPercentage'));
     }
 
     // Membatalkan pesanan

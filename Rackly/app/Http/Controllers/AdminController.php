@@ -11,16 +11,42 @@ class AdminController extends Controller
 {
     public function index()
     {
-        // Menghitung total pesanan yang berstatus 'lunas' (sudah bayar penuh)
-        $totalPaidBookings = Booking::where('status', 'lunas')->count();
+        // 1. Booking sukses (selesai & dp_lunas)
+        $selesaiCount = Booking::where('status', 'lunas')->count();
+        $terkonfirmasiCount = Booking::where('status', 'dp_lunas')->count();
+        $bookingSuksesCount = $selesaiCount + $terkonfirmasiCount;
 
-        // Menghitung total pendapatan dari pesanan 'lunas' (pakai paid_amount)
-        $totalRevenue = Booking::where('status', 'lunas')->sum('paid_amount');
+        // 2. Pendapatan diterima (paid_amount)
+        $totalRevenue = Booking::whereIn('status', ['lunas', 'dp_lunas'])->sum('paid_amount');
 
-        // Mengambil 10 pesanan terbaru
-        $recentBookings = Booking::with('user')->orderBy('created_at', 'desc')->limit(10)->get();
+        // 3. Menunggu pembayaran
+        $pendingBookings = Booking::where('status', 'pending')->get();
+        $pendingCount = $pendingBookings->count();
+        $pendingDpTotal = $pendingBookings->sum('dp_amount');
 
-        return view('admin.dashboard', compact('totalPaidBookings', 'totalRevenue', 'recentBookings'));
+        // 4. Meja
+        $allTables = BilliardTable::all();
+        $totalTablesCount = $allTables->count();
+        $activeTablesCount = $allTables->where('is_active', 1)->count();
+
+        // 5. Pesanan terbaru
+        $recentBookings = Booking::with(['user', 'billiardTable'])
+            ->orderBy('created_at', 'desc')
+            ->limit(8)
+            ->get();
+
+        return view('admin.dashboard', compact(
+            'bookingSuksesCount',
+            'selesaiCount',
+            'terkonfirmasiCount',
+            'totalRevenue',
+            'pendingCount',
+            'pendingDpTotal',
+            'activeTablesCount',
+            'totalTablesCount',
+            'allTables',
+            'recentBookings'
+        ));
     }
 
     // Halaman kelola semua pesanan (untuk proses pelunasan)

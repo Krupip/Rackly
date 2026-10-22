@@ -15,7 +15,8 @@
 </head>
 <body class="bg-[#F8FAF9] text-gray-800 antialiased min-h-screen flex flex-col justify-between" x-data="{ 
     filter: 'all',
-    activeModal: null
+    activeModal: null,
+    cancelModal: null
 }">
 
     <!-- Header / Navbar -->
@@ -256,12 +257,11 @@
                         <div class="flex items-center gap-2 self-end sm:self-center">
                             
                             @if($booking->status === 'pending')
-                                <form action="{{ route('booking.cancel', $booking->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?');">
-                                    @csrf
-                                    <button type="submit" class="px-3 py-1.5 border border-gray-200 hover:border-red-300 hover:text-red-600 rounded-lg text-xs font-semibold text-gray-600 transition">
-                                        Batalkan
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        @click="cancelModal = {{ $booking->id }}" 
+                                        class="px-3.5 py-1.5 border border-red-200 bg-white hover:bg-red-50 text-red-600 rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm">
+                                    Batalkan
+                                </button>
                                 <a href="{{ route('booking.checkout', $booking->id) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1B5E43] hover:bg-[#154b35] text-white rounded-lg text-xs font-bold transition shadow-sm">
                                     Lanjutkan pembayaran &rarr;
                                 </a>
@@ -331,6 +331,40 @@
                                 <button @click="activeModal = null" class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm transition">
                                     Tutup
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Konfirmasi Batalkan Pesanan -->
+                    <div x-show="cancelModal === {{ $booking->id }}" 
+                         x-transition.opacity 
+                         class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" 
+                         style="display: none;">
+                        <div @click.outside="cancelModal = null" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900 text-base">Batalkan Pesanan?</h3>
+                                    <p class="text-xs text-gray-500">Booking #CP-{{ str_pad($booking->id, 6, '0', STR_PAD_LEFT) }}</p>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-gray-600 leading-relaxed">
+                                Apakah kamu yakin ingin membatalkan pesanan ini? Jadwal meja <strong>{{ $booking->billiardTable->table_number ?? 'ini' }}</strong> akan otomatis dilepas dan status pesanan menjadi dibatalkan.
+                            </p>
+
+                            <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
+                                <button type="button" @click="cancelModal = null" class="px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition cursor-pointer">
+                                    Kembali
+                                </button>
+                                <form action="{{ route('booking.cancel', $booking->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-sm">
+                                        Ya, Batalkan Pesanan
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>

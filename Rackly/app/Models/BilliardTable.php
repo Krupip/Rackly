@@ -12,6 +12,13 @@ class BilliardTable extends Model
 {
     use HasFactory;
 
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
     // Relasi: Satu Meja bisa memiliki banyak Booking (riwayat jadwal)
     public function bookings(): HasMany
     {

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,9 +11,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
     </style>
 </head>
+
 <body class="bg-[#F8FAF9] text-gray-800 antialiased min-h-screen flex flex-col justify-between">
 
     <!-- Header / Navbar -->
@@ -37,54 +41,38 @@
                 </nav>
             </div>
 
-            <!-- Step Indicator -->
-            <div class="hidden lg:flex items-center gap-2 text-xs">
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-[#1B5E43] text-white flex items-center justify-center font-bold text-xs shadow-sm">1</div>
-                    <span class="font-bold text-gray-900">Pilih jadwal</span>
-                </div>
-                <div class="w-10 h-px bg-gray-200"></div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-xs">2</div>
-                    <span class="text-gray-400 font-medium">Pembayaran DP</span>
-                </div>
-                <div class="w-10 h-px bg-gray-200"></div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-xs">3</div>
-                    <span class="text-gray-400 font-medium">Siap bermain</span>
-                </div>
-            </div>
-
             <div class="flex items-center gap-4">
                 <a href="{{ route('booking.history') }}" class="hidden sm:inline-block text-sm font-medium text-gray-700 hover:text-[#1B5E43] transition">
                     Riwayat booking
                 </a>
 
                 @auth
-                    <div class="relative" x-data="{ userMenu: false }">
-                        <button @click="userMenu = !userMenu" class="flex items-center gap-2 p-1 pl-2 pr-3 rounded-full hover:bg-gray-100 border border-transparent hover:border-gray-200 transition">
-                            <div class="w-8 h-8 rounded-full bg-[#E8F3EE] text-[#1B5E43] font-bold text-xs flex items-center justify-center">
-                                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                            </div>
-                            <span class="text-sm font-semibold text-gray-800 hidden sm:inline">{{ Auth::user()->name }}</span>
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div x-show="userMenu" @click.outside="userMenu = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50">
-                            <div class="px-4 py-2 border-b border-gray-100">
-                                <p class="text-xs text-gray-500">Masuk sebagai</p>
-                                <p class="text-sm font-bold text-gray-800 truncate">{{ Auth::user()->email }}</p>
-                            </div>
-                            <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Profil saya</a>
-                            <a href="{{ route('booking.history') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Riwayat booking</a>
-                            @if(Auth::user()->is_admin)
-                                <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm text-[#1B5E43] font-semibold hover:bg-emerald-50">Admin Panel</a>
-                            @endif
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Keluar</button>
-                            </form>
+                <div class="relative" x-data="{ userMenu: false }">
+                    <button @click="userMenu = !userMenu" class="flex items-center gap-2 p-1 pl-2 pr-3 rounded-full hover:bg-gray-100 border border-transparent hover:border-gray-200 transition">
+                        <div class="w-8 h-8 rounded-full bg-[#E8F3EE] text-[#1B5E43] font-bold text-xs flex items-center justify-center">
+                            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
                         </div>
+                        <span class="text-sm font-semibold text-gray-800 hidden sm:inline">{{ Auth::user()->name }}</span>
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="userMenu" @click.outside="userMenu = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50">
+                        <div class="px-4 py-2 border-b border-gray-100">
+                            <p class="text-xs text-gray-500">Masuk sebagai</p>
+                            <p class="text-sm font-bold text-gray-800 truncate">{{ Auth::user()->email }}</p>
+                        </div>
+                        <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Profil saya</a>
+                        <a href="{{ route('booking.history') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Riwayat booking</a>
+                        @if(Auth::user()->is_admin)
+                        <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm text-[#1B5E43] font-semibold hover:bg-emerald-50">Admin Panel</a>
+                        @endif
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Keluar</button>
+                        </form>
                     </div>
+                </div>
                 @endauth
             </div>
         </div>
@@ -92,31 +80,59 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1"
-          x-data="bookingManager({{ $billiardTable->price_per_hour }}, {{ $dpPercentage }}, {{ json_encode($existingBookings ?? []) }})">
+        x-data="bookingManager({{ $billiardTable->price_per_hour }}, {{ $dpPercentage }}, {{ json_encode($existingBookings ?? []) }})">
 
-        <!-- Breadcrumb & Header -->
-        <div class="mb-8">
-            <span class="text-xs font-bold tracking-wider text-[#1B5E43] uppercase block mb-1">BERANDA / BOOKING MEJA</span>
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Rencanakan permainanmu.</h1>
-            <p class="text-gray-500 mt-2 text-sm sm:text-base">Pilih jadwal yang pas. Kami siapkan mejanya.</p>
+        <!-- Breadcrumb & Header with Step Indicator (Sesuai Referensi Figma) -->
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
+            <div>
+                <span class="text-xs font-bold tracking-wider text-[#1B5E43] uppercase block mb-1">BERANDA / BOOKING MEJA</span>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Rencanakan permainanmu.</h1>
+                <p class="text-gray-500 mt-2 text-sm sm:text-base">Pilih jadwal yang pas. Kami siapkan mejanya.</p>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="hidden sm:flex items-center gap-3 text-xs sm:text-sm text-gray-500 shrink-0">
+                <div class="flex items-center gap-2 font-bold text-gray-900">
+                    <div class="w-7 h-7 rounded-full bg-[#1B5E43] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                        1
+                    </div>
+                    <span>Pilih jadwal</span>
+                </div>
+                <div class="w-8 sm:w-14 h-px bg-gray-200"></div>
+                <div class="flex items-center gap-2 text-gray-400 font-medium">
+                    <div class="w-7 h-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-xs">
+                        2
+                    </div>
+                    <span>Pembayaran DP</span>
+                </div>
+                <div class="w-8 sm:w-14 h-px bg-gray-200"></div>
+                <div class="flex items-center gap-2 text-gray-400 font-medium">
+                    <div class="w-7 h-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-xs">
+                        3
+                    </div>
+                    <span>Siap bermain</span>
+                </div>
+            </div>
         </div>
 
         @if(session('error'))
-            <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-medium">
-                <svg class="w-5 h-5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                {{ session('error') }}
-            </div>
+        <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-medium">
+            <svg class="w-5 h-5 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            {{ session('error') }}
+        </div>
         @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
+
             <!-- Left Column: Selection Cards (8 cols) -->
             <div class="lg:col-span-8 space-y-6">
-                
+
                 <!-- Card 1: Meja Pilihanmu -->
                 <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6 sm:p-7">
                     <h2 class="text-base font-bold text-gray-900 mb-4">Meja pilihanmu</h2>
-                    
+
                     <div class="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
                         <div class="w-full sm:w-44 h-28 rounded-xl overflow-hidden bg-gray-900 shrink-0 shadow-sm relative">
                             <img src="/images/Table photograph.png" alt="{{ $billiardTable->table_number }}" class="w-full h-full object-cover">
@@ -144,8 +160,10 @@
 
                             <div class="pt-1">
                                 <a href="{{ url('/#tables') }}" class="text-xs font-bold text-[#1B5E43] hover:underline inline-flex items-center gap-1">
-                                    Ganti meja 
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                    Ganti meja
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
                                 </a>
                             </div>
                         </div>
@@ -167,17 +185,21 @@
                         <input type="hidden" name="end_time" x-model="endTime">
 
                         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                            
+
                             <!-- Left: Interactive Calendar (5 cols) -->
                             <div class="md:col-span-5 bg-gray-50/70 border border-gray-200/70 rounded-2xl p-4 sm:p-5">
                                 <div class="flex items-center justify-between mb-4">
                                     <span class="text-xs font-bold text-gray-900 capitalize" x-text="calendarMonthName"></span>
                                     <div class="flex items-center gap-1">
                                         <button type="button" @click="prevMonth()" class="p-1 rounded-lg hover:bg-gray-200 text-gray-500 transition">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                            </svg>
                                         </button>
                                         <button type="button" @click="nextMonth()" class="p-1 rounded-lg hover:bg-gray-200 text-gray-500 transition">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
                                         </button>
                                     </div>
                                 </div>
@@ -198,16 +220,16 @@
                                     <template x-for="(day, idx) in calendarDays" :key="idx">
                                         <div class="aspect-square flex items-center justify-center">
                                             <button type="button"
-                                                    x-show="day.dayNumber"
-                                                    @click="if(!day.disabled) selectDate(day.dateString)"
-                                                    :disabled="day.disabled"
-                                                    :class="{
+                                                x-show="day.dayNumber"
+                                                @click="if(!day.disabled) selectDate(day.dateString)"
+                                                :disabled="day.disabled"
+                                                :class="{
                                                         'bg-[#1B5E43] text-white font-extrabold shadow-sm': selectedDate === day.dateString,
                                                         'text-gray-900 hover:bg-emerald-100 font-semibold': !day.disabled && selectedDate !== day.dateString,
                                                         'text-gray-300 cursor-not-allowed': day.disabled
                                                     }"
-                                                    class="w-8 h-8 rounded-full flex items-center justify-center transition"
-                                                    x-text="day.dayNumber">
+                                                class="w-8 h-8 rounded-full flex items-center justify-center transition"
+                                                x-text="day.dayNumber">
                                             </button>
                                         </div>
                                     </template>
@@ -216,7 +238,7 @@
 
                             <!-- Right: Time Selection & Slot Grid (7 cols) -->
                             <div class="md:col-span-7 space-y-5">
-                                
+
                                 <div class="border-b border-gray-100 pb-3">
                                     <span class="text-xs font-bold text-gray-900 block" x-text="formatFullDate(selectedDate)"></span>
                                 </div>
@@ -226,7 +248,7 @@
                                     <div>
                                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Jam Mulai</label>
                                         <select x-model="startTime" @change="onStartTimeChange()"
-                                                class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                                            class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
                                             <option value="">-- Jam Mulai --</option>
                                             <template x-for="slot in availableStartSlots" :key="slot">
                                                 <option :value="slot" x-text="slot + ' WIB'"></option>
@@ -237,7 +259,7 @@
                                     <div>
                                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Jam Selesai</label>
                                         <select x-model="endTime" :disabled="!startTime"
-                                                class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                            class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition disabled:opacity-50 disabled:cursor-not-allowed">
                                             <option value="">-- Jam Selesai --</option>
                                             <template x-for="slot in availableEndSlots" :key="slot">
                                                 <option :value="slot" x-text="slot + ' WIB'"></option>
@@ -247,24 +269,21 @@
                                 </div>
 
                                 <p class="text-xs text-gray-400">
-                                    Ketersediaan {{ $billiardTable->table_number }} hari ini. Pilih slot pada kotak di bawah:
+                                    Ketersediaan {{ $billiardTable->table_number }} pada tanggal ini:
                                 </p>
 
-                                <!-- Time Slots Grid (Boxes) -->
+                                <!-- Time Slots Grid (Display Only - Tidak Bisa Dipencet) -->
                                 <div class="grid grid-cols-3 gap-2">
                                     <template x-for="slot in allDisplaySlots" :key="slot.time">
-                                        <button type="button"
-                                                @click="handleSlotClick(slot.time)"
-                                                :disabled="slot.isBooked || slot.isPast"
-                                                :class="{
-                                                    'bg-[#1B5E43] border-[#1B5E43] text-white font-extrabold shadow-sm': isSlotSelected(slot.time),
-                                                    'bg-red-50 border-red-200 text-red-400 cursor-not-allowed': slot.isBooked,
-                                                    'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed': slot.isPast && !slot.isBooked,
-                                                    'bg-white border-gray-200 text-gray-800 hover:border-[#1B5E43] hover:text-[#1B5E43]': !slot.isBooked && !slot.isPast && !isSlotSelected(slot.time)
-                                                }"
-                                                class="border rounded-xl py-2.5 text-xs font-bold text-center transition">
+                                        <div :class="{
+                                                'bg-[#1B5E43] border-[#1B5E43] text-white font-extrabold shadow-sm': isSlotSelected(slot.time),
+                                                'bg-red-50 border-red-200 text-red-500 font-semibold': slot.isBooked,
+                                                'bg-gray-100 border-gray-200 text-gray-400 font-medium': slot.isPast && !slot.isBooked,
+                                                'bg-white border-gray-200 text-gray-700 font-medium': !slot.isBooked && !slot.isPast && !isSlotSelected(slot.time)
+                                            }"
+                                            class="border rounded-xl py-2.5 text-xs text-center transition cursor-default select-none pointer-events-none">
                                             <span x-text="slot.time"></span>
-                                        </button>
+                                        </div>
                                     </template>
                                 </div>
 
@@ -287,7 +306,9 @@
                                 <!-- Availability Notice -->
                                 <template x-if="isValidTime">
                                     <div class="bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-3 text-xs text-emerald-900 flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-[#1B5E43] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <svg class="w-4 h-4 text-[#1B5E43] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
                                         <span>
                                             Slot <strong x-text="startTime + ' – ' + endTime + ' WIB'"></strong> tersedia. Durasi minimum 1 jam, kelipatan 1 jam.
                                         </span>
@@ -301,17 +322,17 @@
                         <!-- Card 3: Info Pemesan -->
                         <div class="border-t border-gray-100 pt-6 mt-6">
                             <h3 class="text-sm font-bold text-gray-900 mb-3">Informasi pemesan</h3>
-                            
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
                                     <input type="text" value="{{ Auth::user()->name }}" disabled
-                                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 cursor-not-allowed">
+                                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 cursor-not-allowed">
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Alamat Email</label>
                                     <input type="email" value="{{ Auth::user()->email }}" disabled
-                                           class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 cursor-not-allowed">
+                                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 cursor-not-allowed">
                                 </div>
                             </div>
                             <p class="text-[11px] text-gray-400 mt-2">Data diambil dari profil akunmu. Ubah melalui halaman Profil Saya.</p>
@@ -324,9 +345,9 @@
 
             <!-- Right Column: Ringkasan Booking (4 cols) -->
             <div class="lg:col-span-4 space-y-5">
-                
+
                 <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6 space-y-5 sticky top-24">
-                    
+
                     <div class="border-b border-gray-100 pb-3">
                         <h3 class="text-base font-bold text-gray-900">Ringkasan booking</h3>
                     </div>
@@ -383,7 +404,7 @@
                     <!-- Submit Button -->
                     <div class="space-y-2.5 pt-1">
                         <button type="submit" form="booking-form" :disabled="!isValidTime"
-                                class="w-full bg-[#1B5E43] hover:bg-[#154b35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
+                            class="w-full bg-[#1B5E43] hover:bg-[#154b35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
                             Lanjut ke pembayaran &rarr;
                         </button>
 
@@ -394,7 +415,9 @@
 
                     <!-- Note Datang 10 Menit (Tanpa Note H-3 sesuai aturan) -->
                     <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-900 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                         <span>Datang 10 menit sebelum jadwal.</span>
                     </div>
 
@@ -458,7 +481,10 @@
 
                 get calendarMonthName() {
                     const d = new Date(this.calYear, this.calMonth, 1);
-                    return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                    return d.toLocaleDateString('id-ID', {
+                        month: 'long',
+                        year: 'numeric'
+                    });
                 },
 
                 get calendarDays() {
@@ -472,7 +498,10 @@
 
                     // Leading empty days
                     for (let i = 0; i < startDayOffset; i++) {
-                        days.push({ dayNumber: null, disabled: true });
+                        days.push({
+                            dayNumber: null,
+                            disabled: true
+                        });
                     }
 
                     // Days in current month
@@ -567,50 +596,15 @@
                     }
                     const availableEnds = this.availableEndSlots;
                     if (availableEnds.length > 0) {
-                        // Default to 1 or 2 hours
-                        if (availableEnds.length >= 2) {
-                            this.endTime = availableEnds[1]; // 2 hours
+                        if (this.endTime && availableEnds.includes(this.endTime)) {
+                            // Pertahankan jam selesai jika masih dalam pilihan valid
+                        } else if (availableEnds.length >= 2) {
+                            this.endTime = availableEnds[1]; // default 2 jam
                         } else {
-                            this.endTime = availableEnds[0]; // 1 hour
+                            this.endTime = availableEnds[0]; // default 1 jam
                         }
                     } else {
                         this.endTime = '';
-                    }
-                },
-
-                handleSlotClick(timeStr) {
-                    const slotObj = this.allDisplaySlots.find(s => s.time === timeStr);
-                    if (!slotObj || slotObj.isPast || slotObj.isBooked) return;
-
-                    const clickedH = parseInt(timeStr.split(':')[0]);
-
-                    if (!this.startTime) {
-                        this.startTime = timeStr;
-                        this.onStartTimeChange();
-                        return;
-                    }
-
-                    const currentStartH = parseInt(this.startTime.split(':')[0]);
-
-                    if (clickedH === currentStartH) {
-                        // Clicked same start time, advance end time if possible
-                        return;
-                    } else if (clickedH > currentStartH) {
-                        // Set as ending time slot + 1 hour
-                        const newEndH = clickedH + 1;
-                        if (newEndH <= 23) {
-                            const candidateEnd = String(newEndH).padStart(2, '0') + ':00';
-                            if (this.availableEndSlots.includes(candidateEnd)) {
-                                this.endTime = candidateEnd;
-                                return;
-                            }
-                        }
-                        this.startTime = timeStr;
-                        this.onStartTimeChange();
-                    } else {
-                        // Clicked earlier slot: set as new start time
-                        this.startTime = timeStr;
-                        this.onStartTimeChange();
                     }
                 },
 
@@ -656,16 +650,24 @@
                 formatFullDate(dateStr) {
                     if (!dateStr) return '';
                     const d = new Date(dateStr + 'T00:00:00');
-                    return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    return d.toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
                 },
 
                 formatRupiah(num) {
                     return new Intl.NumberFormat('id-ID', {
-                        style: 'currency', currency: 'IDR', minimumFractionDigits: 0
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0
                     }).format(num || 0);
                 }
             };
         }
     </script>
 </body>
+
 </html>

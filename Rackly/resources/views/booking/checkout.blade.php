@@ -122,17 +122,20 @@
                             </div>
                         </div>
 
+                        @php
+                            $expiryMinutes = (int) \App\Models\Setting::get('dp_expiry_minutes', 15);
+                        @endphp
                         <!-- Timer Box -->
                         <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
                             <div>
                                 <p class="text-sm font-bold text-amber-900">
-                                    Selesaikan sebelum {{ \Carbon\Carbon::parse($booking->created_at)->addMinutes(15)->format('d M Y, H:i') }} WIB
+                                    Selesaikan sebelum {{ \Carbon\Carbon::parse($booking->created_at)->addMinutes($expiryMinutes)->format('d M Y, H:i') }} WIB
                                 </p>
                                 <p class="text-xs text-amber-700 mt-0.5">Jadwal dilepas otomatis jika pembayaran kedaluwarsa.</p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span id="countdown" class="text-2xl font-bold font-mono text-amber-900">15:00</span>
+                                <span id="countdown" class="text-2xl font-bold font-mono text-amber-900">{{ str_pad($expiryMinutes, 2, '0', STR_PAD_LEFT) }}:00</span>
                             </div>
                         </div>
 
@@ -240,7 +243,7 @@
                             <span class="font-medium text-gray-900">Rp{{ number_format($booking->total_price, 0, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between items-center text-sm font-bold text-gray-900">
-                            <span>DP {{ $dpPercentage ?? 30 }}%</span>
+                            <span>{{ ($dpType ?? 'percentage') === 'fixed' ? 'DP (Nominal tetap)' : 'DP ' . ($dpPercentage ?? 30) . '%' }}</span>
                             <span class="text-[#1B5E43] text-base">Rp{{ number_format($payment->gross_amount, 0, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between items-center text-gray-600 text-xs pt-1 border-t border-dashed border-gray-200">
@@ -287,7 +290,7 @@
     <script type="text/javascript">
         // Countdown Timer
         const bookingCreatedAt = new Date("{{ $booking->created_at->toIso8601String() }}").getTime();
-        const TIMEOUT_MS = 15 * 60 * 1000;
+        const TIMEOUT_MS = {{ $expiryMinutes }} * 60 * 1000;
         const expireAt = bookingCreatedAt + TIMEOUT_MS;
         const historyUrl = "{{ route('booking.history') }}";
         const countdownEl = document.getElementById('countdown');

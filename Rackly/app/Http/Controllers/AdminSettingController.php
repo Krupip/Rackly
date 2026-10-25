@@ -17,17 +17,47 @@ class AdminSettingController extends Controller
     // Simpan perubahan pengaturan
     public function update(Request $request)
     {
-        $request->validate([
-            'dp_percentage' => 'required|integer|min:1|max:100',
-        ], [
+        $dpType = $request->input('dp_type', 'percentage');
+
+        $rules = [
+            'dp_type'           => 'nullable|in:percentage,fixed',
+            'dp_expiry_minutes' => 'nullable|integer|in:15,30,60',
+        ];
+
+        if ($dpType === 'fixed') {
+            $rules['dp_nominal'] = 'required|numeric|min:1000';
+            $rules['dp_percentage'] = 'nullable|integer|min:1|max:100';
+        } else {
+            $rules['dp_percentage'] = 'required|integer|min:1|max:100';
+            $rules['dp_nominal'] = 'nullable|numeric|min:1000';
+        }
+
+        $messages = [
+            'dp_type.in'             => 'Metode perhitungan DP tidak valid.',
             'dp_percentage.required' => 'Persentase DP wajib diisi.',
             'dp_percentage.integer'  => 'Persentase DP harus berupa angka bulat.',
             'dp_percentage.min'      => 'Persentase DP minimal 1%.',
             'dp_percentage.max'      => 'Persentase DP maksimal 100%.',
-        ]);
+            'dp_nominal.required'    => 'Nominal DP wajib diisi jika metode nominal tetap dipilih.',
+            'dp_nominal.numeric'     => 'Nominal DP harus berupa angka.',
+            'dp_nominal.min'         => 'Nominal DP minimal Rp1.000.',
+        ];
 
-        Setting::where('key', 'dp_percentage')
-            ->update(['value' => $request->dp_percentage]);
+        $request->validate($rules, $messages);
+
+        Setting::set('dp_type', $dpType, 'Metode Perhitungan DP (percentage / fixed)');
+
+        if ($request->filled('dp_percentage')) {
+            Setting::set('dp_percentage', $request->dp_percentage, 'Persentase Down Payment (%)');
+        }
+
+        if ($request->filled('dp_nominal')) {
+            Setting::set('dp_nominal', $request->dp_nominal, 'Nominal Tetap DP (Rp)');
+        }
+
+        if ($request->filled('dp_expiry_minutes')) {
+            Setting::set('dp_expiry_minutes', $request->dp_expiry_minutes, 'Batas Waktu Pembayaran DP (Menit)');
+        }
 
         return redirect()->route('admin.settings')->with('success', 'Pengaturan berhasil disimpan!');
     }

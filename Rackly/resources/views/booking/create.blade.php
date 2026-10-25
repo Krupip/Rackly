@@ -80,7 +80,7 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1"
-        x-data="bookingManager({{ $billiardTable->price_per_hour }}, {{ $dpPercentage }}, {{ json_encode($existingBookings ?? []) }})">
+        x-data="bookingManager({{ $billiardTable->price_per_hour }}, '{{ $dpType ?? 'percentage' }}', {{ $dpPercentage ?? 30 }}, {{ $dpNominal ?? 50000 }}, {{ json_encode($existingBookings ?? []) }})">
 
         <!-- Breadcrumb & Header with Step Indicator (Sesuai Referensi Figma) -->
         <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
@@ -391,7 +391,9 @@
                         <div class="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 space-y-2">
                             <div class="flex justify-between items-start">
                                 <div>
-                                    <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">DP dibayar sekarang · {{ $dpPercentage }}%</span>
+                                    <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider block"
+                                          x-text="dpType === 'fixed' ? 'DP dibayar sekarang · Nominal tetap' : ('DP dibayar sekarang · ' + dpPercentage + '%')">
+                                    </span>
                                     <span class="text-2xl font-black text-[#1B5E43] tracking-tight block mt-0.5" x-text="formatRupiah(dpAmount)"></span>
                                 </div>
                             </div>
@@ -442,10 +444,12 @@
     </footer>
 
     <script>
-        function bookingManager(pricePerHour, dpPct, existingBookings) {
+        function bookingManager(pricePerHour, dpType, dpPct, dpNominal, existingBookings) {
             return {
                 pricePerHour,
-                dpPercentage: dpPct,
+                dpType: dpType || 'percentage',
+                dpPercentage: dpPct || 30,
+                dpNominal: dpNominal || 50000,
                 existingBookings: existingBookings || [],
                 selectedDate: '{{ date('Y-m-d') }}',
                 calYear: new Date().getFullYear(),
@@ -644,6 +648,9 @@
                 },
 
                 get dpAmount() {
+                    if (this.dpType === 'fixed') {
+                        return Math.min(this.dpNominal, this.totalPrice);
+                    }
                     return this.totalPrice * (this.dpPercentage / 100);
                 },
 

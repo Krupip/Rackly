@@ -108,8 +108,13 @@
                 {{-- Stats --}}
                 <div class="flex flex-wrap gap-8 mt-12 pt-8 border-t border-white/20">
                     <div>
+                        @if($dpType === 'fixed')
+                        <p class="text-2xl font-bold text-white">Rp{{ number_format($dpNominal, 0, ',', '.') }}</p>
+                        <p class="text-gray-400 text-sm">DP nominal tetap, sisanya di lokasi</p>
+                    @else
                         <p class="text-2xl font-bold text-white">{{ $dpPercentage }}%</p>
                         <p class="text-gray-400 text-sm">DP, sisanya di lokasi</p>
+                    @endif
                     </div>
                     <div>
                         <p class="text-2xl font-bold text-white">{{ $openHour }}–{{ $closeHour }}</p>
@@ -219,7 +224,13 @@
                 </div>
                 <div>
                     <div class="text-5xl font-black text-gray-100 mb-3">02</div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Amankan dengan DP {{ $dpPercentage }}%</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">
+                        @if($dpType === 'fixed')
+                            Amankan dengan DP Rp{{ number_format($dpNominal, 0, ',', '.') }}
+                        @else
+                            Amankan dengan DP {{ $dpPercentage }}%
+                        @endif
+                    </h3>
                     <p class="text-gray-500 leading-relaxed">Masuk ke akunmu dan bayar DP melalui pilihan pembayaran Midtrans.</p>
                 </div>
                 <div>

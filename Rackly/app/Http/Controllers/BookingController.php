@@ -32,7 +32,9 @@ class BookingController extends Controller
             return redirect('/')->with('error', 'Maaf, meja ini sedang maintenance.');
         }
 
+        $dpType = Setting::get('dp_type', 'percentage');
         $dpPercentage = (int) Setting::get('dp_percentage', 30);
+        $dpNominal = (int) Setting::get('dp_nominal', 50000);
 
         // Ambil booking aktif yang sudah ada untuk meja ini
         $existingBookings = Booking::where('billiard_table_id', $billiardTable->id)
@@ -47,7 +49,7 @@ class BookingController extends Controller
                 ];
             });
 
-        return view('booking.create', compact('billiardTable', 'dpPercentage', 'existingBookings'));
+        return view('booking.create', compact('billiardTable', 'dpType', 'dpPercentage', 'dpNominal', 'existingBookings'));
     }
 
     public function store(Request $request)
@@ -84,10 +86,19 @@ class BookingController extends Controller
         }
 
         // 3. Hitung Durasi, Harga, dan DP sesuai setting
+        $dpType = Setting::get('dp_type', 'percentage');
         $dpPercentage = (int) Setting::get('dp_percentage', 30);
+        $dpNominal = (int) Setting::get('dp_nominal', 50000);
+        $expiryMinutes = (int) Setting::get('dp_expiry_minutes', 15);
+
         $durationHours = $start->diffInMinutes($end) / 60;
         $totalPrice = $durationHours * $table->price_per_hour;
-        $dpAmount = $totalPrice * ($dpPercentage / 100);
+
+        if ($dpType === 'fixed') {
+            $dpAmount = min($dpNominal, $totalPrice);
+        } else {
+            $dpAmount = $totalPrice * ($dpPercentage / 100);
+        }
 
         // 4. Simpan ke database (Tabel Bookings)
         $booking = \App\Models\Booking::create([
@@ -127,11 +138,11 @@ class BookingController extends Controller
                 'first_name' => auth()->user()->name,
                 'email' => auth()->user()->email,
             ],
-            // Batas waktu pembayaran: 15 menit
+            // Batas waktu pembayaran
             'expiry' => [
                 'start_time' => now()->format('Y-m-d H:i:s O'),
                 'unit'       => 'minutes',
-                'duration'   => 15,
+                'duration'   => $expiryMinutes,
             ],
         ];
 
@@ -142,7 +153,7 @@ class BookingController extends Controller
         $payment->update(['snap_token' => $snapToken]);
 
         // 9. Arahkan ke halaman Checkout (Pastikan nama foldernya 'bookings' pakai s)
-        return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpPercentage'));
+        return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpType', 'dpPercentage', 'dpNominal'));
     }
 
     // Melanjutkan pembayaran dari riwayat
@@ -155,9 +166,11 @@ class BookingController extends Controller
 
         $payment = $booking->payment;
         $snapToken = $payment->snap_token;
+        $dpType = Setting::get('dp_type', 'percentage');
         $dpPercentage = (int) Setting::get('dp_percentage', 30);
+        $dpNominal = (int) Setting::get('dp_nominal', 50000);
 
-        return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpPercentage'));
+        return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpType', 'dpPercentage', 'dpNominal'));
     }
 
     // Membatalkan pesanan

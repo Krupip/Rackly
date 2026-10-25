@@ -17,4 +17,17 @@ class Setting extends Model
         $setting = static::where('key', $key)->first();
         return $setting ? $setting->value : $default;
     }
+
+    /**
+     * Simpan atau perbarui nilai setting berdasarkan key.
+     */
+    public static function set(string $key, mixed $value, ?string $label = null): static
+    {
+        $data = ['value' => (string) $value];
+        if ($label !== null) {
+            $data['label'] = $label;
+        }
+
+        return static::updateOrCreate(['key' => $key], $data);
+    }
 }

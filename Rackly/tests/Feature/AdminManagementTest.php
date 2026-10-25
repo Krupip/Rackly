@@ -162,3 +162,32 @@ test('admin settings validation fails with invalid percentage', function () {
 
     $response->assertSessionHasErrors(['dp_percentage']);
 });
+
+test('admin can update DP setting to fixed nominal', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $response = $this->actingAs($admin)->patch(route('admin.settings.update'), [
+        'dp_type' => 'fixed',
+        'dp_nominal' => 75000,
+        'dp_expiry_minutes' => 30,
+    ]);
+
+    $response->assertRedirect(route('admin.settings'));
+    $response->assertSessionHas('success');
+
+    expect(Setting::get('dp_type'))->toBe('fixed')
+        ->and(Setting::get('dp_nominal'))->toBe('75000')
+        ->and(Setting::get('dp_expiry_minutes'))->toBe('30');
+});
+
+test('admin settings validation fails when fixed nominal is missing or invalid', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $response = $this->actingAs($admin)->patch(route('admin.settings.update'), [
+        'dp_type' => 'fixed',
+        'dp_nominal' => 500, // below min:1000
+    ]);
+
+    $response->assertSessionHasErrors(['dp_nominal']);
+});
+

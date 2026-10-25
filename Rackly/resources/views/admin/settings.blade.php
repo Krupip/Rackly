@@ -5,10 +5,13 @@
 
 @section('content')
 @php
+    $currentDpType = $settings->get('dp_type')?->value ?? 'percentage';
     $currentDp = (int) ($settings->get('dp_percentage')?->value ?? 30);
+    $currentDpNominal = (int) ($settings->get('dp_nominal')?->value ?? 50000);
+    $currentExpiry = (int) ($settings->get('dp_expiry_minutes')?->value ?? 15);
 @endphp
 
-<div x-data="settingsSimulator({{ $currentDp }})" class="space-y-8">
+<div x-data="settingsSimulator('{{ $currentDpType }}', {{ $currentDp }}, {{ $currentDpNominal }}, {{ $currentExpiry }})" class="space-y-8">
     
     <!-- Header -->
     <div>
@@ -21,7 +24,12 @@
     <div class="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 flex gap-3 text-xs text-emerald-900 leading-relaxed">
         <svg class="w-5 h-5 text-[#1B5E43] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <div>
-            Aturan aktif: <strong>DP <span x-text="dpPct"></span>% dari total booking</strong>. Berlaku untuk seluruh meja Reguler dan VIP. Pesanan walk-in dibayar penuh di kasir tanpa DP.
+            <template x-if="dpType === 'percentage'">
+                <span>Aturan aktif: <strong>DP <span x-text="dpPct"></span>% dari total booking</strong>. Berlaku untuk seluruh meja Reguler dan VIP. Pesanan walk-in dibayar penuh di kasir tanpa DP.</span>
+            </template>
+            <template x-if="dpType === 'fixed'">
+                <span>Aturan aktif: <strong>DP <span x-text="formatRupiah(dpNominal)"></span> (Nominal tetap) per pesanan booking</strong>. Berlaku untuk seluruh meja Reguler dan VIP. Pesanan walk-in dibayar penuh di kasir tanpa DP.</span>
+            </template>
         </div>
     </div>
 
@@ -54,39 +62,67 @@
                         </label>
                     </div>
 
+                    <!-- Hidden dp_type input bound to Alpine dpType -->
+                    <input type="hidden" name="dp_type" :value="dpType">
+
                     <!-- Metode Perhitungan DP Selection -->
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Metode Perhitungan DP</label>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div class="border-2 border-[#1B5E43] bg-emerald-50/40 rounded-xl p-4 cursor-pointer">
+                            <!-- Card Persentase -->
+                            <div @click="dpType = 'percentage'"
+                                 class="border-2 rounded-xl p-4 cursor-pointer transition select-none flex flex-col justify-between"
+                                 :class="dpType === 'percentage' ? 'border-[#1B5E43] bg-emerald-50/40 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="w-3 h-3 rounded-full bg-[#1B5E43]"></span>
-                                    <span class="text-sm font-bold text-[#1B5E43]">Persentase</span>
+                                    <span class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition"
+                                          :class="dpType === 'percentage' ? 'border-[#1B5E43] bg-[#1B5E43]' : 'border-gray-300 bg-white'">
+                                        <span x-show="dpType === 'percentage'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                    </span>
+                                    <span class="text-sm font-bold"
+                                          :class="dpType === 'percentage' ? 'text-[#1B5E43]' : 'text-gray-900'">
+                                        Persentase
+                                    </span>
                                 </div>
-                                <p class="text-xs text-gray-500">Dihitung otomatis dari durasi dan total harga booking</p>
+                                <p class="text-xs text-gray-500 pl-6">Dihitung otomatis dari durasi dan total harga booking</p>
                             </div>
 
-                            <div class="border border-gray-200 bg-gray-50/60 rounded-xl p-4 opacity-60 cursor-not-allowed">
+                            <!-- Card Nominal Tetap -->
+                            <div @click="dpType = 'fixed'"
+                                 class="border-2 rounded-xl p-4 cursor-pointer transition select-none flex flex-col justify-between"
+                                 :class="dpType === 'fixed' ? 'border-[#1B5E43] bg-emerald-50/40 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="w-3 h-3 rounded-full bg-gray-300"></span>
-                                    <span class="text-sm font-bold text-gray-500">Nominal Tetap</span>
+                                    <span class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition"
+                                          :class="dpType === 'fixed' ? 'border-[#1B5E43] bg-[#1B5E43]' : 'border-gray-300 bg-white'">
+                                        <span x-show="dpType === 'fixed'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                    </span>
+                                    <span class="text-sm font-bold"
+                                          :class="dpType === 'fixed' ? 'text-[#1B5E43]' : 'text-gray-900'">
+                                        Nominal Tetap
+                                    </span>
                                 </div>
-                                <p class="text-xs text-gray-400">Nilai rupiah tetap per pesanan (saat ini dinonaktifkan)</p>
+                                <p class="text-xs text-gray-500 pl-6">Nilai rupiah tetap per pesanan booking</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Input Persentase DP & Nominal -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Persentase DP Input -->
                         <div>
-                            <label for="dp_percentage" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                Persentase DP Aktif <span class="text-red-500">*</span>
+                            <label for="dp_percentage" class="block text-xs font-bold uppercase tracking-wider mb-2"
+                                   :class="dpType === 'percentage' ? 'text-gray-700' : 'text-gray-400'">
+                                <span x-text="dpType === 'percentage' ? 'Persentase DP Aktif' : 'Persentase DP (tidak aktif)'"></span>
+                                <span x-show="dpType === 'percentage'" class="text-red-500">*</span>
                             </label>
-                            <div class="relative">
+                            <div class="relative" @click="if(dpType !== 'percentage') dpType = 'percentage'">
                                 <input type="number" id="dp_percentage" name="dp_percentage"
-                                       x-model.number="dpPct" min="1" max="100" required
-                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base font-extrabold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition pr-10">
-                                <span class="absolute right-4 top-3.5 text-sm font-bold text-gray-400">%</span>
+                                       x-model.number="dpPct" min="1" max="100"
+                                       :required="dpType === 'percentage'"
+                                       :readonly="dpType !== 'percentage'"
+                                       :class="dpType === 'percentage' ? 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white focus:border-[#1B5E43]' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-pointer'"
+                                       class="w-full px-4 py-3 border rounded-xl text-base font-extrabold focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 transition pr-10">
+                                <span class="absolute right-4 top-3.5 text-sm font-bold"
+                                      :class="dpType === 'percentage' ? 'text-gray-400' : 'text-gray-300'">%</span>
                             </div>
                             <p class="text-[11px] text-gray-400 mt-1">Rentang 1–100% dari total booking.</p>
                             @error('dp_percentage')
@@ -94,22 +130,37 @@
                             @enderror
                         </div>
 
+                        <!-- Nominal DP Input -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                Nominal DP (tidak aktif)
+                            <label for="dp_nominal" class="block text-xs font-bold uppercase tracking-wider mb-2"
+                                   :class="dpType === 'fixed' ? 'text-gray-700' : 'text-gray-400'">
+                                <span x-text="dpType === 'fixed' ? 'Nominal DP Aktif' : 'Nominal DP (tidak aktif)'"></span>
+                                <span x-show="dpType === 'fixed'" class="text-red-500">*</span>
                             </label>
-                            <input type="text" disabled value="Rp80.000"
-                                   class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm font-medium text-gray-400 cursor-not-allowed">
-                            <p class="text-[11px] text-gray-400 mt-1">Digunakan jika memilih Nominal tetap.</p>
+                            <div class="relative" @click="if(dpType !== 'fixed') dpType = 'fixed'">
+                                <span class="absolute left-4 top-3.5 text-sm font-bold"
+                                      :class="dpType === 'fixed' ? 'text-gray-500' : 'text-gray-300'">Rp</span>
+                                <input type="number" id="dp_nominal" name="dp_nominal"
+                                       x-model.number="dpNominal" min="1000"
+                                       :required="dpType === 'fixed'"
+                                       :readonly="dpType !== 'fixed'"
+                                       :class="dpType === 'fixed' ? 'bg-gray-50 border-gray-200 text-gray-900 focus:bg-white focus:border-[#1B5E43]' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-pointer'"
+                                       class="w-full pl-11 pr-4 py-3 border rounded-xl text-base font-extrabold focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 transition">
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">Nominal rupiah tetap per booking (minimal Rp1.000, contoh: 15000, 50000).</p>
+                            @error('dp_nominal')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
 
                     <!-- Batas Waktu Pembayaran DP -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                        <label for="dp_expiry_minutes" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                             Batas Waktu Pembayaran DP
                         </label>
-                        <select class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                        <select id="dp_expiry_minutes" name="dp_expiry_minutes" x-model="dpExpiry"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
                             <option value="15">15 menit setelah pesanan dibuat (Standar)</option>
                             <option value="30">30 menit setelah pesanan dibuat</option>
                             <option value="60">60 menit setelah pesanan dibuat</option>
@@ -119,7 +170,7 @@
 
                     <!-- Action Buttons -->
                     <div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
-                        <button type="button" @click="dpPct = {{ $currentDp }}"
+                        <button type="button" @click="reset()"
                                 class="px-5 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 transition">
                             Batalkan perubahan
                         </button>
@@ -143,7 +194,7 @@
                     <div>
                         <h3 class="text-sm font-bold text-gray-900">Catatan Penerapan Sistem</h3>
                         <p class="text-xs text-gray-500 mt-1 leading-relaxed">
-                            Pesanan yang sudah dibuat sebelumnya tetap menggunakan besaran DP saat tanggal pemesanan. Sisa pembayaran wajib dilunasi kasir di lokasi sebelum bermain. Pengembalian dana atau kompensasi ditangani staf sesuai kebijakan klub.
+                            Pesanan yang sudah dibuat sebelumnya tetap menggunakan besaran DP saat tanggal pemesanan. Sisa pembayaran wajib dilunasi kasir di lokasi sebelum bermain. Jika menggunakan nominal tetap, DP tidak akan melebihi total booking. Pengembalian dana atau kompensasi ditangani staf sesuai kebijakan klub.
                         </p>
                         <p class="text-[11px] text-gray-400 mt-3">
                             Terakhir diperbarui oleh <strong>{{ Auth::user()->name }}</strong> · {{ \Carbon\Carbon::now()->translatedFormat('d M Y, H.i') }} WIB
@@ -163,14 +214,14 @@
                     <h3 class="text-base font-bold text-gray-900">Simulasi perhitungan</h3>
                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                        DP <span x-text="dpPct"></span>% aktif
+                        <span x-text="dpType === 'fixed' ? 'DP ' + formatRupiah(dpNominal) + ' aktif' : 'DP ' + dpPct + '% aktif'"></span>
                     </span>
                 </div>
 
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Contoh Meja</label>
-                        <select x-model="simPrice" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:bg-white focus:outline-none">
+                        <select x-model.number="simPrice" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:bg-white focus:outline-none">
                             <option value="80000">Meja Reguler · Rp80.000/jam</option>
                             <option value="120000">Meja VIP · Rp120.000/jam</option>
                         </select>
@@ -178,7 +229,7 @@
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Durasi Bermain</label>
-                        <select x-model="simDuration" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:bg-white focus:outline-none">
+                        <select x-model.number="simDuration" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:bg-white focus:outline-none">
                             <option value="1">1 jam</option>
                             <option value="2">2 jam</option>
                             <option value="3">3 jam</option>
@@ -201,7 +252,7 @@
                 <!-- Highlight DP Box -->
                 <div class="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-5 text-center space-y-1">
                     <span class="text-xs font-bold text-[#1B5E43] uppercase tracking-wider block"
-                          x-text="'DP = ' + dpPct + '% × ' + formatRupiah(simTotal)">
+                          x-text="dpType === 'fixed' ? 'DP = Nominal tetap' : ('DP = ' + dpPct + '% × ' + formatRupiah(simTotal))">
                     </span>
                     <div class="text-3xl font-extrabold text-[#1B5E43] tracking-tight"
                          x-text="formatRupiah(simDp)">
@@ -217,7 +268,12 @@
                 </div>
 
                 <p class="text-[11px] text-gray-400 leading-tight">
-                    Contoh VIP: 2 jam × Rp120.000 = Rp240.000. DP <span x-text="dpPct"></span>% = <span x-text="formatRupiah(240000 * (dpPct / 100))"></span>.
+                    <template x-if="dpType === 'percentage'">
+                        <span>Contoh VIP: 2 jam × Rp120.000 = Rp240.000. DP <span x-text="dpPct"></span>% = <span x-text="formatRupiah(240000 * (dpPct / 100))"></span>.</span>
+                    </template>
+                    <template x-if="dpType === 'fixed'">
+                        <span>Contoh VIP: 2 jam × Rp120.000 = Rp240.000. DP = <span x-text="formatRupiah(Math.min(dpNominal, 240000))"></span> (Sisa pelunasan <span x-text="formatRupiah(Math.max(0, 240000 - Math.min(dpNominal, 240000)))"></span>).</span>
+                    </template>
                 </p>
 
             </div>
@@ -225,7 +281,7 @@
             <!-- Bottom Notification -->
             <div class="bg-emerald-50/60 border border-emerald-200/60 rounded-xl p-4 text-xs text-emerald-900 flex gap-2">
                 <svg class="w-4 h-4 text-[#1B5E43] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>Nilai persentase DP yang sama ditampilkan otomatis di ringkasan booking pelanggan, halaman pembayaran Snap, dan laporan admin.</span>
+                <span>Nilai aturan DP yang sama ditampilkan otomatis di ringkasan booking pelanggan, halaman pembayaran Snap, dan laporan admin.</span>
             </div>
 
         </div>
@@ -235,9 +291,12 @@
 </div>
 
 <script>
-    function settingsSimulator(initialDp) {
+    function settingsSimulator(initialType, initialDp, initialNominal, initialExpiry) {
         return {
-            dpPct: initialDp,
+            dpType: initialType || 'percentage',
+            dpPct: initialDp || 30,
+            dpNominal: initialNominal || 50000,
+            dpExpiry: initialExpiry || 15,
             simPrice: 80000,
             simDuration: 2,
 
@@ -246,17 +305,27 @@
             },
 
             get simDp() {
-                return this.simTotal * (this.dpPct / 100);
+                if (this.dpType === 'fixed') {
+                    return Math.min(this.dpNominal || 0, this.simTotal);
+                }
+                return this.simTotal * ((this.dpPct || 0) / 100);
             },
 
             get simRemaining() {
-                return this.simTotal - this.simDp;
+                return Math.max(0, this.simTotal - this.simDp);
+            },
+
+            reset() {
+                this.dpType = initialType || 'percentage';
+                this.dpPct = initialDp || 30;
+                this.dpNominal = initialNominal || 50000;
+                this.dpExpiry = initialExpiry || 15;
             },
 
             formatRupiah(num) {
                 return new Intl.NumberFormat('id-ID', {
                     style: 'currency', currency: 'IDR', minimumFractionDigits: 0
-                }).format(num);
+                }).format(num || 0);
             }
         };
     }

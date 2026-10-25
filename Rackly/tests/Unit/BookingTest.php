@@ -144,3 +144,26 @@ test('calculates correct DP amount and remaining balance based on percentage', f
     expect($dpAmount)->toBe(72000.0)
         ->and($remainingBalance)->toBe(168000.0);
 });
+
+test('calculates correct DP amount based on fixed nominal', function () {
+    $totalPrice = 240000;
+    $fixedNominal = 50000;
+
+    $dpAmount = min($fixedNominal, $totalPrice);
+    $remainingBalance = $totalPrice - $dpAmount;
+
+    expect($dpAmount)->toBe(50000)
+        ->and($remainingBalance)->toBe(190000);
+});
+
+test('caps fixed nominal DP amount to total price if nominal exceeds total price', function () {
+    $totalPrice = 40000;
+    $fixedNominal = 50000;
+
+    $dpAmount = min($fixedNominal, $totalPrice);
+    $remainingBalance = $totalPrice - $dpAmount;
+
+    expect($dpAmount)->toBe(40000)
+        ->and($remainingBalance)->toBe(0);
+});
+

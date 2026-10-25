@@ -27,7 +27,29 @@ test('user can view booking form for active table', function () {
     $response->assertStatus(200);
     $response->assertViewHas('billiardTable', $table);
     $response->assertViewHas('dpPercentage', 30);
+    $response->assertViewHas('dpType', 'percentage');
+    $response->assertViewHas('dpNominal', 50000);
 });
+
+test('booking form receives fixed dpType and custom dpNominal settings', function () {
+    Setting::set('dp_type', 'fixed');
+    Setting::set('dp_nominal', 60000);
+
+    $user = User::factory()->create();
+    $table = BilliardTable::create([
+        'table_number' => 'Meja Flow Nominal',
+        'type' => 'Reguler',
+        'price_per_hour' => 80000,
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('bookings.create', $table));
+
+    $response->assertStatus(200);
+    $response->assertViewHas('dpType', 'fixed');
+    $response->assertViewHas('dpNominal', 60000);
+});
+
 
 test('user cannot view booking form for inactive maintenance table', function () {
     $user = User::factory()->create();

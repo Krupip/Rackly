@@ -7,12 +7,39 @@ use App\Models\Booking;
 use App\Models\User;
 use Carbon\Carbon;
 
-test('admin can access walk-in creation page', function () {
+test('admin can access walk-in creation page and view existing bookings', function () {
     $admin = User::factory()->create(['role' => 'admin']);
+    $user = User::factory()->create();
+
+    $table = BilliardTable::create([
+        'table_number' => 'Meja T1',
+        'type' => 'Reguler',
+        'price_per_hour' => 50000,
+        'is_active' => true,
+    ]);
+
+    Booking::create([
+        'user_id' => $user->id,
+        'billiard_table_id' => $table->id,
+        'start_time' => Carbon::tomorrow()->setTime(14, 0),
+        'end_time' => Carbon::tomorrow()->setTime(16, 0),
+        'total_price' => 100000,
+        'dp_amount' => 30000,
+        'paid_amount' => 30000,
+        'status' => 'dp_lunas',
+    ]);
 
     $response = $this->actingAs($admin)->get(route('admin.walkin.create'));
 
     $response->assertStatus(200);
+    $response->assertViewHas('tables');
+    $response->assertViewHas('existingBookings');
+
+    $bookingsInView = $response->viewData('existingBookings');
+    expect($bookingsInView)->not->toBeEmpty();
+    expect($bookingsInView->first()['table_id'])->toBe($table->id);
+    expect($bookingsInView->first()['start'])->toBe('14:00');
+    expect($bookingsInView->first()['end'])->toBe('16:00');
 });
 
 test('admin can create a walk-in booking without paying dp', function () {

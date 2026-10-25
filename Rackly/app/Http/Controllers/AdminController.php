@@ -82,7 +82,20 @@ class AdminController extends Controller
     public function createWalkIn()
     {
         $tables = BilliardTable::where('is_active', 1)->get();
-        return view('admin.walkin-create', compact('tables'));
+
+        $existingBookings = Booking::whereIn('status', ['pending', 'dp_lunas', 'lunas'])
+            ->whereDate('start_time', '>=', Carbon::today())
+            ->get(['billiard_table_id', 'start_time', 'end_time'])
+            ->map(function ($b) {
+                return [
+                    'table_id' => $b->billiard_table_id,
+                    'date'     => Carbon::parse($b->start_time)->format('Y-m-d'),
+                    'start'    => Carbon::parse($b->start_time)->format('H:i'),
+                    'end'      => Carbon::parse($b->end_time)->format('H:i'),
+                ];
+            });
+
+        return view('admin.walkin-create', compact('tables', 'existingBookings'));
     }
 
     // Simpan pesanan walk-in langsung di kasir

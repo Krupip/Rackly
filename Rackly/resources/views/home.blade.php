@@ -146,65 +146,94 @@
     </section>
 
     {{-- TABLE CATALOG --}}
-    <section id="pilih-meja" class="py-20 bg-gray-50">
+    <section id="pilih-meja" class="py-20 bg-gray-50"
+             x-data="homeTableCatalog({{ json_encode($tables->map(function($t, $idx) {
+                 return [
+                     'id' => $t->id,
+                     'table_number' => $t->table_number,
+                     'type' => $t->type,
+                     'index_label' => str_pad($idx + 1, 2, '0', STR_PAD_LEFT),
+                     'price_per_hour' => (int) $t->price_per_hour,
+                     'formatted_price' => 'Rp ' . number_format($t->price_per_hour, 0, ',', '.'),
+                     'is_occupied' => false,
+                     'booking_url' => route('bookings.create', $t->id),
+                 ];
+             })) }}, {{ Auth::check() ? 'true' : 'false' }})"
+             x-init="initRealtime()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-end mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest text-brand-green mb-2">Milih untuk setap permainan</p>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-semibold uppercase tracking-widest text-brand-green">Pilihan untuk setiap permainan</span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>
+                            Live Updates
+                        </span>
+                    </div>
                     <h2 class="text-4xl font-black text-gray-900">Pilih sudut bermainmu.</h2>
-                    <p class="text-gray-500 mt-2">Cek ketersediaan dan temukan meja yang pas untuk main ini.</p>
+                    <p class="text-gray-500 mt-2">Cek ketersediaan dan temukan meja yang pas untuk main hari ini.</p>
                 </div>
                 <a href="#pilih-meja" class="hidden md:block text-sm text-brand-green font-semibold underline underline-offset-2">Lihat semua meja →</a>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                @forelse($tables as $table)
-                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                <template x-for="table in tables" :key="table.id">
+                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group">
                         {{-- Table Image --}}
                         <div class="relative h-48 overflow-hidden bg-gray-800">
-                            <img src="/images/Table photograph.png" alt="{{ $table->table_number }}"
+                            <img src="/images/Table photograph.png" :alt="table.table_number"
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90">
+                            
                             <div class="absolute top-3 left-3">
-                                <span class="bg-green-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">● Tersedia</span>
+                                <template x-if="!table.is_occupied">
+                                    <span class="bg-green-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">● Tersedia</span>
+                                </template>
+                                <template x-if="table.is_occupied">
+                                    <span class="bg-amber-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">● Sedang Digunakan</span>
+                                </template>
                             </div>
-                            <div class="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded font-mono">
-                                MEJA {{ str_pad($loop->index + 1, 2, '0', STR_PAD_LEFT) }}
+                            
+                            <div class="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded font-mono"
+                                 x-text="'MEJA ' + table.index_label">
                             </div>
                         </div>
 
                         {{-- Table Info --}}
                         <div class="p-5">
                             <div class="flex justify-between items-start mb-1">
-                                <h3 class="text-lg font-bold text-gray-900">{{ $table->table_number }}</h3>
-                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">{{ $table->type }}</span>
+                                <h3 class="text-lg font-bold text-gray-900" x-text="table.table_number"></h3>
+                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium" x-text="table.type"></span>
                             </div>
                             <p class="text-gray-500 text-sm mb-3">Area utama · 9 kaki · 2–4 pemain</p>
                             <p class="text-2xl font-black text-brand-green mb-4">
-                                Rp {{ number_format($table->price_per_hour, 0, ',', '.') }}
+                                <span x-text="table.formatted_price"></span>
                                 <span class="text-sm text-gray-400 font-normal">/jam</span>
                             </p>
 
-                            @auth
-                                <a href="{{ route('bookings.create', $table->id) }}"
+                            <template x-if="isAuth">
+                                <a :href="table.booking_url"
                                    class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2.5 px-4 rounded-lg transition text-sm">
-                                    Booking meja {{ str_pad($loop->index + 1, 2, '0', STR_PAD_LEFT) }} →
+                                    Booking meja <span x-text="table.index_label"></span> →
                                 </a>
-                            @else
+                            </template>
+                            <template x-if="!isAuth">
                                 <a href="{{ route('login') }}"
                                    class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2.5 px-4 rounded-lg transition text-sm">
                                     Masuk untuk booking →
                                 </a>
-                            @endauth
+                            </template>
                         </div>
                     </div>
-                @empty
+                </template>
+
+                <template x-if="tables.length === 0">
                     <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
                         <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                             <svg width="24" height="24" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M12 8v8"/></svg>
                         </div>
                         <p class="text-gray-500 font-medium">Semua meja sedang tidak tersedia saat ini.</p>
                     </div>
-                @endforelse
+                </template>
             </div>
         </div>
     </section>
@@ -439,6 +468,38 @@
                 }
             });
         });
+
+        // Real-time Home Table Catalog
+        function homeTableCatalog(initialTables, isAuth) {
+            return {
+                tables: initialTables || [],
+                isAuth: !!isAuth,
+                pollingTimer: null,
+
+                initRealtime() {
+                    // Poll data setiap 4 detik untuk update ketersediaan real-time
+                    this.pollingTimer = setInterval(() => {
+                        this.fetchTables();
+                    }, 4000);
+                },
+
+                async fetchTables() {
+                    try {
+                        const res = await fetch('{{ route('realtime.tables') }}', {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.tables) {
+                                this.tables = data.tables;
+                            }
+                        }
+                    } catch (err) {
+                        // Silent catch on network blip
+                    }
+                }
+            };
+        }
     </script>
 </body>
 </html>

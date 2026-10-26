@@ -16,6 +16,12 @@ class BookingController extends Controller
     // Menampilkan riwayat pesanan (history) user
     public function history()
     {
+        // Otomatis ubah pesanan DP lunas yang sudah melewati jam selesai menjadi no_show
+        \App\Models\Booking::where('user_id', auth()->id())
+            ->where('status', 'dp_lunas')
+            ->where('end_time', '<', \Carbon\Carbon::now())
+            ->update(['status' => 'no_show']);
+
         $bookings = \App\Models\Booking::with('billiardTable')
             ->where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
@@ -35,6 +41,8 @@ class BookingController extends Controller
         $dpType = Setting::get('dp_type', 'percentage');
         $dpPercentage = (int) Setting::get('dp_percentage', 30);
         $dpNominal = (int) Setting::get('dp_nominal', 50000);
+        $openHour = Setting::get('open_hour', '10:00');
+        $closeHour = Setting::get('close_hour', '23:00');
 
         // Ambil booking aktif yang sudah ada untuk meja ini
         $existingBookings = Booking::where('billiard_table_id', $billiardTable->id)
@@ -49,7 +57,7 @@ class BookingController extends Controller
                 ];
             });
 
-        return view('booking.create', compact('billiardTable', 'dpType', 'dpPercentage', 'dpNominal', 'existingBookings'));
+        return view('booking.create', compact('billiardTable', 'dpType', 'dpPercentage', 'dpNominal', 'existingBookings', 'openHour', 'closeHour'));
     }
 
     public function store(Request $request)

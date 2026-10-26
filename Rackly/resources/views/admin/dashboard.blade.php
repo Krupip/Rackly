@@ -4,7 +4,35 @@
 @section('breadcrumb', 'Operasional / Dashboard')
 
 @section('content')
-<div class="space-y-8">
+<div x-data="adminDashboardRealtime({{ json_encode([
+    'metrics' => [
+        'bookingSuksesCount' => $bookingSuksesCount,
+        'selesaiCount' => $selesaiCount,
+        'terkonfirmasiCount' => $terkonfirmasiCount,
+        'totalRevenue' => (int) $totalRevenue,
+        'totalRevenueFormatted' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
+        'pendingCount' => $pendingCount,
+        'pendingDpTotal' => (int) $pendingDpTotal,
+        'pendingDpTotalFormatted' => 'Rp ' . number_format($pendingDpTotal, 0, ',', '.'),
+        'activeTablesCount' => $activeTablesCount,
+        'totalTablesCount' => $totalTablesCount,
+    ],
+    'recentBookings' => $recentBookings->map(function ($b) {
+        return [
+            'id' => $b->id,
+            'code' => '#CP-' . str_pad($b->id, 6, '0', STR_PAD_LEFT),
+            'created_at_formatted' => $b->created_at->format('d M Y, H:i'),
+            'customer' => $b->is_walkin ? $b->guest_name : ($b->user->name ?? '-'),
+            'source' => $b->is_walkin ? 'Walk-in Kasir' : 'Online Booking',
+            'table_info' => 'Meja ' . ($b->billiardTable->table_number ?? '-') . ' · ' . ($b->billiardTable->type ?? 'Reguler'),
+            'time_info' => \Carbon\Carbon::parse($b->start_time)->format('H.i') . ' – ' . \Carbon\Carbon::parse($b->end_time)->format('H.i') . ' WIB',
+            'total_formatted' => 'Rp' . number_format($b->total_price, 0, ',', '.'),
+            'paid_amount_formatted' => 'Rp' . number_format($b->paid_amount, 0, ',', '.'),
+            'dp_amount_formatted' => 'Rp' . number_format($b->dp_amount, 0, ',', '.'),
+            'status' => $b->status,
+        ];
+    })
+]) }})" x-init="initRealtime()" class="space-y-8">
     
     <!-- Header Greeting & CTA -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -44,10 +72,10 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
             </div>
-            <div class="text-3xl font-extrabold text-gray-900 mb-2">
+            <div class="text-3xl font-extrabold text-gray-900 mb-2" x-text="metrics.bookingSuksesCount">
                 {{ $bookingSuksesCount }}
             </div>
-            <p class="text-xs text-gray-400">
+            <p class="text-xs text-gray-400" x-text="metrics.selesaiCount + ' selesai · ' + metrics.terkonfirmasiCount + ' DP lunas'">
                 {{ $selesaiCount }} selesai · {{ $terkonfirmasiCount }} DP lunas
             </p>
         </div>
@@ -60,7 +88,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                 </div>
             </div>
-            <div class="text-3xl font-extrabold text-white mb-2 tracking-tight">
+            <div class="text-3xl font-extrabold text-white mb-2 tracking-tight" x-text="metrics.totalRevenueFormatted">
                 Rp{{ number_format($totalRevenue, 0, ',', '.') }}
             </div>
             <p class="text-xs text-emerald-100">
@@ -76,10 +104,10 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
             </div>
-            <div class="text-3xl font-extrabold text-gray-900 mb-2">
+            <div class="text-3xl font-extrabold text-gray-900 mb-2" x-text="metrics.pendingCount">
                 {{ $pendingCount }}
             </div>
-            <p class="text-xs text-amber-600 font-medium">
+            <p class="text-xs text-amber-600 font-medium" x-text="'Total DP tertunda ' + metrics.pendingDpTotalFormatted">
                 Total DP tertunda Rp{{ number_format($pendingDpTotal, 0, ',', '.') }}
             </p>
         </div>
@@ -92,7 +120,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16M10 4v16"/></svg>
                 </div>
             </div>
-            <div class="text-3xl font-extrabold text-gray-900 mb-2">
+            <div class="text-3xl font-extrabold text-gray-900 mb-2" x-text="metrics.activeTablesCount + ' / ' + metrics.totalTablesCount">
                 {{ $activeTablesCount }} / {{ $totalTablesCount }}
             </div>
             <p class="text-xs text-gray-400">
@@ -206,9 +234,15 @@
     <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
         
         <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-            <div>
-                <h3 class="text-base font-bold text-gray-900">Pesanan terbaru</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Daftar transaksi dan booking yang baru masuk ke sistem</p>
+            <div class="flex items-center gap-3">
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Pesanan terbaru</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Daftar transaksi dan booking yang baru masuk ke sistem</p>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>
+                    Live
+                </span>
             </div>
             <a href="{{ route('admin.bookings') }}" class="text-xs font-bold text-[#1B5E43] hover:underline flex items-center gap-1">
                 Lihat semua pesanan &rarr;
@@ -227,61 +261,79 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-xs">
-                    @forelse($recentBookings as $booking)
+                    <template x-for="booking in recentBookings" :key="booking.id">
                         <tr class="hover:bg-gray-50/50 transition">
                             <td class="py-4 px-6 font-mono font-bold text-gray-900 whitespace-nowrap">
-                                #CP-{{ str_pad($booking->id, 6, '0', STR_PAD_LEFT) }}<br>
-                                <span class="text-[10px] font-normal text-gray-400">{{ $booking->created_at->format('d M Y, H:i') }}</span>
+                                <span x-text="booking.code"></span><br>
+                                <span class="text-[10px] font-normal text-gray-400" x-text="booking.created_at_formatted"></span>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap">
-                                <span class="font-bold text-gray-900 block">{{ $booking->is_walkin ? $booking->guest_name : ($booking->user->name ?? '-') }}</span>
-                                <span class="text-[10px] text-gray-400">{{ $booking->is_walkin ? 'Walk-in Kasir' : 'Online Booking' }}</span>
+                                <span class="font-bold text-gray-900 block" x-text="booking.customer"></span>
+                                <span class="text-[10px] text-gray-400" x-text="booking.source"></span>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap">
-                                <span class="font-semibold text-gray-800 block">Meja {{ $booking->billiardTable->table_number ?? '-' }} · {{ $booking->billiardTable->type ?? 'Reguler' }}</span>
-                                <span class="text-[11px] text-gray-400">{{ \Carbon\Carbon::parse($booking->start_time)->format('H.i') }} – {{ \Carbon\Carbon::parse($booking->end_time)->format('H.i') }} WIB</span>
+                                <span class="font-semibold text-gray-800 block" x-text="booking.table_info"></span>
+                                <span class="text-[11px] text-gray-400" x-text="booking.time_info"></span>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap">
-                                <span class="font-bold text-gray-900 block">Rp{{ number_format($booking->total_price, 0, ',', '.') }}</span>
+                                <span class="font-bold text-gray-900 block" x-text="booking.total_formatted"></span>
                                 <span class="text-[10px] text-gray-500">
-                                    @if($booking->status === 'lunas')
-                                        Lunas (Rp{{ number_format($booking->paid_amount, 0, ',', '.') }})
-                                    @elseif($booking->status === 'dp_lunas')
-                                        DP Rp{{ number_format($booking->dp_amount, 0, ',', '.') }}
-                                    @else
-                                        Belum bayar
-                                    @endif
+                                    <template x-if="booking.status === 'lunas'">
+                                        <span x-text="'Lunas (' + booking.paid_amount_formatted + ')'"></span>
+                                    </template>
+                                    <template x-if="booking.status === 'dp_lunas'">
+                                        <span x-text="'DP ' + booking.dp_amount_formatted"></span>
+                                    </template>
+                                    <template x-if="booking.status === 'pending'">
+                                        <span>Belum bayar</span>
+                                    </template>
+                                    <template x-if="booking.status === 'no_show'">
+                                        <span class="text-rose-600 font-semibold">No-Show</span>
+                                    </template>
+                                    <template x-if="booking.status === 'cancelled'">
+                                        <span class="text-red-500">Dibatalkan</span>
+                                    </template>
                                 </span>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap">
-                                @if($booking->status === 'lunas')
+                                <template x-if="booking.status === 'lunas'">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                         Selesai
                                     </span>
-                                @elseif($booking->status === 'dp_lunas')
+                                </template>
+                                <template x-if="booking.status === 'dp_lunas'">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                                         Terkonfirmasi (DP Lunas)
                                     </span>
-                                @elseif($booking->status === 'pending')
+                                </template>
+                                <template x-if="booking.status === 'pending'">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                         Menunggu DP
                                     </span>
-                                @else
+                                </template>
+                                <template x-if="booking.status === 'no_show'">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                        No-Show
+                                    </span>
+                                </template>
+                                <template x-if="booking.status === 'cancelled'">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
                                         Dibatalkan
                                     </span>
-                                @endif
+                                </template>
                             </td>
                         </tr>
-                    @empty
+                    </template>
+                    <template x-if="recentBookings.length === 0">
                         <tr>
                             <td colspan="5" class="py-8 px-6 text-center text-gray-400">
                                 Belum ada pesanan terbaru.
                             </td>
                         </tr>
-                    @endforelse
+                    </template>
                 </tbody>
             </table>
         </div>
@@ -289,4 +341,38 @@
     </div>
 
 </div>
+
+<script>
+    function adminDashboardRealtime(initialData) {
+        return {
+            metrics: initialData.metrics || {},
+            recentBookings: initialData.recentBookings || [],
+            pollingTimer: null,
+
+            initRealtime() {
+                // Polling data setiap 3 detik
+                this.pollingTimer = setInterval(() => {
+                    this.fetchDashboard();
+                }, 3000);
+            },
+
+            async fetchDashboard() {
+                try {
+                    const res = await fetch('{{ route('admin.realtime.dashboard') }}', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'success') {
+                            this.metrics = data.metrics;
+                            this.recentBookings = data.recentBookings;
+                        }
+                    }
+                } catch (e) {
+                    // Silent fail on network disconnect
+                }
+            }
+        };
+    }
+</script>
 @endsection

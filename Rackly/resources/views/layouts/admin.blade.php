@@ -89,7 +89,7 @@
                     </div>
                     <p class="text-gray-400 text-[11px] leading-tight">
                         {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}<br>
-                        12.00 – 02.00 WIB
+                        {{ str_replace(':', '.', \App\Models\Setting::get('open_hour', '10:00')) }} – {{ str_replace(':', '.', \App\Models\Setting::get('close_hour', '23:00')) }} WIB
                     </p>
                     <div class="mt-3 pt-3 border-t border-white/10">
                         <a href="{{ url('/') }}" target="_blank" class="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold transition">

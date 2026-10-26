@@ -12,6 +12,7 @@ use App\Http\Controllers\HomeController;
 
 // Rute Beranda
 Route::get('/', [HomeController::class, 'index'])->name('dashboard');
+Route::get('/api/realtime/tables', [HomeController::class, 'realtimeTables'])->name('realtime.tables');
 
 // Rute Riwayat Booking User
 Route::get('/booking-history', [BookingController::class, 'history'])
@@ -39,7 +40,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Rute Admin Page
-    Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::resource('/admin/tables', AdminBilliardTableController::class);
     Route::get('/admin/dashboard', [AdminController::class, 'index'])
         ->middleware(['auth', IsAdmin::class])
@@ -56,6 +56,10 @@ Route::middleware('auth')->group(function () {
     // Rute Walk-in (Pesanan Langsung di Kasir)
     Route::get('/admin/walkin/create', [AdminController::class, 'createWalkIn'])->name('admin.walkin.create');
     Route::post('/admin/walkin', [AdminController::class, 'storeWalkIn'])->name('admin.walkin.store');
+
+    // Rute Real-time Admin
+    Route::get('/admin/realtime/dashboard', [AdminController::class, 'realtimeDashboard'])->name('admin.realtime.dashboard');
+    Route::get('/admin/realtime/bookings', [AdminController::class, 'realtimeBookings'])->name('admin.realtime.bookings');
 });
 
 require __DIR__ . '/auth.php';

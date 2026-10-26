@@ -80,7 +80,7 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1"
-        x-data="bookingManager({{ $billiardTable->price_per_hour }}, '{{ $dpType ?? 'percentage' }}', {{ $dpPercentage ?? 30 }}, {{ $dpNominal ?? 50000 }}, {{ json_encode($existingBookings ?? []) }})">
+        x-data="bookingManager({{ $billiardTable->price_per_hour }}, '{{ $dpType ?? 'percentage' }}', {{ $dpPercentage ?? 30 }}, {{ $dpNominal ?? 50000 }}, {{ json_encode($existingBookings ?? []) }}, '{{ $openHour ?? '10:00' }}', '{{ $closeHour ?? '23:00' }}')">
 
         <!-- Breadcrumb & Header with Step Indicator (Sesuai Referensi Figma) -->
         <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
@@ -444,13 +444,15 @@
     </footer>
 
     <script>
-        function bookingManager(pricePerHour, dpType, dpPct, dpNominal, existingBookings) {
+        function bookingManager(pricePerHour, dpType, dpPct, dpNominal, existingBookings, openHour, closeHour) {
             return {
                 pricePerHour,
                 dpType: dpType || 'percentage',
                 dpPercentage: dpPct || 30,
                 dpNominal: dpNominal || 50000,
                 existingBookings: existingBookings || [],
+                openHour: openHour || '10:00',
+                closeHour: closeHour || '23:00',
                 selectedDate: '{{ date('Y-m-d') }}',
                 calYear: new Date().getFullYear(),
                 calMonth: new Date().getMonth(), // 0-11
@@ -531,12 +533,15 @@
                     this.autoSelectAvailableSlot();
                 },
 
-                // Operating Hours: 10:00 to 23:00
+                // Operating Hours: dynamic from settings
                 get allHourList() {
-                    return [
-                        '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
-                        '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'
-                    ];
+                    const openH = parseInt(this.openHour.split(':')[0]);
+                    const closeH = parseInt(this.closeHour.split(':')[0]);
+                    const list = [];
+                    for (let h = openH; h < closeH; h++) {
+                        list.push(String(h).padStart(2, '0') + ':00');
+                    }
+                    return list;
                 },
 
                 get allDisplaySlots() {
@@ -575,9 +580,10 @@
                 get availableEndSlots() {
                     if (!this.startTime) return [];
                     const startH = parseInt(this.startTime.split(':')[0]);
+                    const closeH = parseInt(this.closeHour.split(':')[0]);
                     const endSlots = [];
 
-                    for (let h = startH + 1; h <= 23; h++) {
+                    for (let h = startH + 1; h <= closeH; h++) {
                         const timeStr = String(h).padStart(2, '0') + ':00';
                         // Check if block between startH and h is booked
                         let hasCollision = false;

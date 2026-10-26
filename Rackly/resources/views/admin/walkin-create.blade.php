@@ -4,7 +4,7 @@
 @section('breadcrumb', 'Operasional / Tambah pesanan walk-in')
 
 @section('content')
-<div x-data="walkInManager()" x-init="init()" class="space-y-8">
+<div x-data="walkInManager('{{ $openHour ?? '10:00' }}', '{{ $closeHour ?? '23:00' }}')" x-init="init()" class="space-y-8">
     
     <!-- Header -->
     <div>
@@ -405,10 +405,12 @@
 </div>
 
 <script>
-    function walkInManager() {
+    function walkInManager(openHour, closeHour) {
         return {
             openStart: false,
             openEnd: false,
+            openHour: openHour || '10:00',
+            closeHour: closeHour || '23:00',
             customerName: '{{ old('guest_name') }}' || '',
             selectedTableId: '{{ old('billiard_table_id') }}' || '',
             selectedTableName: '',
@@ -451,9 +453,14 @@
             },
 
             get availableStartHours() {
+                let openH = parseInt(this.openHour.split(':')[0], 10);
+                let closeH = parseInt(this.closeHour.split(':')[0], 10);
+                if (closeH <= openH && closeH > 0) closeH += 24;
+                else if (closeH === 0) closeH = 24;
+
                 let hours = [];
-                for (let i = 10; i <= 23; i++) {
-                    hours.push(i.toString().padStart(2, '0') + ':00');
+                for (let i = openH; i < closeH; i++) {
+                    hours.push((i % 24).toString().padStart(2, '0') + ':00');
                 }
                 return hours;
             },
@@ -461,9 +468,14 @@
             get availableEndHours() {
                 if (!this.startTime) return [];
                 let start = parseInt(this.startTime.split(':')[0], 10);
+                let openH = parseInt(this.openHour.split(':')[0], 10);
+                let closeH = parseInt(this.closeHour.split(':')[0], 10);
+                if (closeH <= openH && closeH > 0) closeH += 24;
+                else if (closeH === 0) closeH = 24;
+
                 let hours = [];
-                for (let i = start + 1; i <= 24; i++) {
-                    hours.push((i === 24 ? '00:00' : i.toString().padStart(2, '0') + ':00'));
+                for (let i = start + 1; i <= closeH; i++) {
+                    hours.push((i === 24 ? '00:00' : (i % 24).toString().padStart(2, '0') + ':00'));
                 }
                 return hours;
             },

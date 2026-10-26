@@ -22,6 +22,8 @@ class AdminSettingController extends Controller
         $rules = [
             'dp_type'           => 'nullable|in:percentage,fixed',
             'dp_expiry_minutes' => 'nullable|integer|in:15,30,60',
+            'open_hour'         => 'nullable|regex:/^\d{2}:\d{2}$/',
+            'close_hour'        => 'nullable|regex:/^\d{2}:\d{2}$/',
         ];
 
         if ($dpType === 'fixed') {
@@ -41,6 +43,8 @@ class AdminSettingController extends Controller
             'dp_nominal.required'    => 'Nominal DP wajib diisi jika metode nominal tetap dipilih.',
             'dp_nominal.numeric'     => 'Nominal DP harus berupa angka.',
             'dp_nominal.min'         => 'Nominal DP minimal Rp1.000.',
+            'open_hour.regex'        => 'Format jam buka tidak valid (gunakan HH:MM, contoh: 10:00).',
+            'close_hour.regex'       => 'Format jam tutup tidak valid (gunakan HH:MM, contoh: 23:00).',
         ];
 
         $request->validate($rules, $messages);
@@ -57,6 +61,14 @@ class AdminSettingController extends Controller
 
         if ($request->filled('dp_expiry_minutes')) {
             Setting::set('dp_expiry_minutes', $request->dp_expiry_minutes, 'Batas Waktu Pembayaran DP (Menit)');
+        }
+
+        if ($request->filled('open_hour')) {
+            Setting::set('open_hour', $request->open_hour, 'Jam Buka Operasional (HH:MM)');
+        }
+
+        if ($request->filled('close_hour')) {
+            Setting::set('close_hour', $request->close_hour, 'Jam Tutup Operasional (HH:MM)');
         }
 
         return redirect()->route('admin.settings')->with('success', 'Pengaturan berhasil disimpan!');

@@ -15,8 +15,40 @@ class HomeController extends Controller
         $dpType       = Setting::get('dp_type', 'percentage');
         $dpPercentage = (int) Setting::get('dp_percentage', 30);
         $dpNominal    = (int) Setting::get('dp_nominal', 50000);
-        $openHour     = Setting::get('open_hour', '12:00');
-        $closeHour    = Setting::get('close_hour', '02:00');
+        $openHour     = Setting::get('open_hour', '10:00');
+        $closeHour    = Setting::get('close_hour', '23:00');
         return view('home', compact('tables', 'dpType', 'dpPercentage', 'dpNominal', 'openHour', 'closeHour'));
+    }
+
+    // Endpoint Real-time untuk katalog meja di halaman Beranda
+    public function realtimeTables()
+    {
+        $now = \Carbon\Carbon::now();
+        $tables = BilliardTable::where('is_active', 1)->get()->map(function ($table, $index) use ($now) {
+            // Cek apakah meja sedang aktif dipakai bermain pada jam ini
+            $isOccupied = \App\Models\Booking::where('billiard_table_id', $table->id)
+                ->whereIn('status', ['dp_lunas', 'lunas'])
+                ->where('start_time', '<=', $now)
+                ->where('end_time', '>', $now)
+                ->exists();
+
+            return [
+                'id'              => $table->id,
+                'table_number'    => $table->table_number,
+                'type'            => $table->type,
+                'index_label'     => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
+                'price_per_hour'  => (int) $table->price_per_hour,
+                'formatted_price' => 'Rp ' . number_format($table->price_per_hour, 0, ',', '.'),
+                'is_occupied'     => $isOccupied,
+                'booking_url'     => route('bookings.create', $table->id),
+            ];
+        });
+
+        return response()->json([
+            'status'    => 'success',
+            'tables'    => $tables,
+            'count'     => $tables->count(),
+            'timestamp' => $now->toIso8601String(),
+        ]);
     }
 }

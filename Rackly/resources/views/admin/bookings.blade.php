@@ -4,35 +4,70 @@
 @section('breadcrumb', 'Operasional / Kelola pesanan')
 
 @section('content')
-<div class="space-y-8" x-data="{
-    search: '',
-    statusFilter: '',
-    sourceFilter: '',
-    selectedBooking: {{ $bookings->first() ? json_encode([
-        'id' => $bookings->first()->id,
-        'code' => '#CP-' . str_pad($bookings->first()->id, 6, '0', STR_PAD_LEFT),
-        'customer' => $bookings->first()->is_walkin ? $bookings->first()->guest_name : ($bookings->first()->user->name ?? '-'),
-        'email' => $bookings->first()->is_walkin ? '-' : ($bookings->first()->user->email ?? '-'),
-        'source' => $bookings->first()->is_walkin ? 'Walk-in' : 'Online',
-        'created_at' => $bookings->first()->created_at->format('d M Y, H:i') . ' WIB',
-        'table' => ($bookings->first()->billiardTable->table_number ?? '-') . ' · ' . ($bookings->first()->billiardTable->type ?? 'Reguler'),
-        'date' => \Carbon\Carbon::parse($bookings->first()->start_time)->translatedFormat('d M Y'),
-        'time' => \Carbon\Carbon::parse($bookings->first()->start_time)->format('H.i') . ' – ' . \Carbon\Carbon::parse($bookings->first()->end_time)->format('H.i') . ' WIB',
-        'duration' => \Carbon\Carbon::parse($bookings->first()->start_time)->diffInHours(\Carbon\Carbon::parse($bookings->first()->end_time)) . ' jam',
-        'total' => 'Rp' . number_format($bookings->first()->total_price, 0, ',', '.'),
-        'dp' => 'Rp' . number_format($bookings->first()->dp_amount, 0, ',', '.'),
-        'remaining' => 'Rp' . number_format(max(0, $bookings->first()->total_price - $bookings->first()->dp_amount), 0, ',', '.'),
-        'status' => $bookings->first()->status,
-        'confirm_url' => route('admin.bookings.confirm', $bookings->first()->id)
-    ]) : 'null' }}
-}">
+@php
+    $initialOrders = $bookings->map(function ($b) {
+        $custName = $b->is_walkin ? $b->guest_name : ($b->user->name ?? '-');
+        $custEmail = $b->is_walkin ? '-' : ($b->user->email ?? '-');
+        $src = $b->is_walkin ? 'Walk-in' : 'Online';
+        $code = '#CP-' . str_pad($b->id, 6, '0', STR_PAD_LEFT);
+        $duration = \Carbon\Carbon::parse($b->start_time)->diffInHours(\Carbon\Carbon::parse($b->end_time)) . ' jam';
+        $remainingAmount = max(0, $b->total_price - $b->dp_amount);
+
+        return [
+            'id' => $b->id,
+            'code' => $code,
+            'customer' => $custName,
+            'email' => $custEmail,
+            'source' => $src,
+            'is_walkin' => (bool) $b->is_walkin,
+            'created_at' => $b->created_at->format('d M Y, H:i') . ' WIB',
+            'created_at_date' => $b->created_at->format('d M Y'),
+            'table' => ($b->billiardTable->table_number ?? '-') . ' · ' . ($b->billiardTable->type ?? 'Reguler'),
+            'table_name' => 'Meja ' . ($b->billiardTable->table_number ?? '-') . ' · ' . ($b->billiardTable->type ?? 'Reguler'),
+            'date' => \Carbon\Carbon::parse($b->start_time)->translatedFormat('d M Y'),
+            'time' => \Carbon\Carbon::parse($b->start_time)->format('H.i') . ' – ' . \Carbon\Carbon::parse($b->end_time)->format('H.i') . ' WIB',
+            'duration' => $duration,
+            'total' => 'Rp' . number_format($b->total_price, 0, ',', '.'),
+            'dp' => 'Rp' . number_format($b->dp_amount, 0, ',', '.'),
+            'remaining' => 'Rp' . number_format($remainingAmount, 0, ',', '.'),
+            'total_formatted' => 'Rp' . number_format($b->total_price, 0, ',', '.'),
+            'dp_formatted' => 'Rp' . number_format($b->dp_amount, 0, ',', '.'),
+            'paid_formatted' => 'Rp' . number_format($b->paid_amount, 0, ',', '.'),
+            'remaining_formatted' => 'Rp' . number_format($remainingAmount, 0, ',', '.'),
+            'status' => $b->status,
+            'confirm_url' => route('admin.bookings.confirm', $b->id),
+        ];
+    });
+
+    $totalOrders = $bookings->count();
+    $suksesOrders = $bookings->whereIn('status', ['lunas', 'dp_lunas'])->count();
+    $pendingOrders = $bookings->where('status', 'pending')->count();
+    $noShowOrders = $bookings->where('status', 'no_show')->count();
+    $batalOrders = $bookings->where('status', 'cancelled')->count();
+
+    $initialMetrics = [
+        'totalOrders' => $totalOrders,
+        'suksesOrders' => $suksesOrders,
+        'pendingOrders' => $pendingOrders,
+        'noShowOrders' => $noShowOrders,
+        'batalOrders' => $batalOrders,
+    ];
+@endphp
+
+<div class="space-y-8" x-data="adminBookingsManager({{ json_encode(['orders' => $initialOrders, 'metrics' => $initialMetrics]) }})" x-init="initRealtime()">
     
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <span class="text-xs font-bold tracking-wider text-[#1B5E43] uppercase block mb-1">OPERASIONAL / PESANAN</span>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-bold tracking-wider text-[#1B5E43] uppercase block">OPERASIONAL / PESANAN</span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>
+                    Live Real-time
+                </span>
+            </div>
             <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Kelola pesanan</h1>
-            <p class="text-xs sm:text-sm text-gray-500 mt-1">Pantau jadwal, pembayaran, dan konfirmasi pelunasan setiap pesanan.</p>
+            <p class="text-xs sm:text-sm text-gray-500 mt-1">Pantau jadwal, pembayaran, dan konfirmasi pelunasan setiap pesanan secara langsung.</p>
         </div>
 
         <div>
@@ -43,30 +78,27 @@
         </div>
     </div>
 
-    @php
-        $totalOrders = $bookings->count();
-        $suksesOrders = $bookings->whereIn('status', ['lunas', 'dp_lunas'])->count();
-        $pendingOrders = $bookings->where('status', 'pending')->count();
-        $batalOrders = $bookings->where('status', 'cancelled')->count();
-    @endphp
-
     <!-- Metrics Stats Row -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <div class="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-sm">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Total pesanan</span>
-            <div class="text-2xl sm:text-3xl font-extrabold text-gray-900">{{ $totalOrders }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-gray-900" x-text="metrics.totalOrders">{{ $totalOrders }}</div>
         </div>
         <div class="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-sm">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Sukses</span>
-            <div class="text-2xl sm:text-3xl font-extrabold text-[#1B5E43]">{{ $suksesOrders }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-[#1B5E43]" x-text="metrics.suksesOrders">{{ $suksesOrders }}</div>
         </div>
         <div class="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-sm">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Menunggu DP</span>
-            <div class="text-2xl sm:text-3xl font-extrabold text-amber-600">{{ $pendingOrders }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-amber-600" x-text="metrics.pendingOrders">{{ $pendingOrders }}</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-sm">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">No-Show</span>
+            <div class="text-2xl sm:text-3xl font-extrabold text-rose-600" x-text="metrics.noShowOrders">{{ $noShowOrders }}</div>
         </div>
         <div class="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-sm">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Dibatalkan</span>
-            <div class="text-2xl sm:text-3xl font-extrabold text-red-600">{{ $batalOrders }}</div>
+            <div class="text-2xl sm:text-3xl font-extrabold text-red-600" x-text="metrics.batalOrders">{{ $batalOrders }}</div>
         </div>
     </div>
 
@@ -88,6 +120,7 @@
                 <option value="dp_lunas">DP Lunas (Terkonfirmasi)</option>
                 <option value="lunas">Lunas (Selesai)</option>
                 <option value="pending">Menunggu DP</option>
+                <option value="no_show">No-Show</option>
                 <option value="cancelled">Dibatalkan</option>
             </select>
 
@@ -116,107 +149,96 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-xs">
-                    @forelse($bookings as $booking)
-                        @php
-                            $custName = $booking->is_walkin ? $booking->guest_name : ($booking->user->name ?? '-');
-                            $custEmail = $booking->is_walkin ? '-' : ($booking->user->email ?? '-');
-                            $src = $booking->is_walkin ? 'Walk-in' : 'Online';
-                            $code = '#CP-' . str_pad($booking->id, 6, '0', STR_PAD_LEFT);
-                            $duration = \Carbon\Carbon::parse($booking->start_time)->diffInHours(\Carbon\Carbon::parse($booking->end_time)) . ' jam';
-                            $remainingAmount = max(0, $booking->total_price - $booking->dp_amount);
-
-                            $jsonData = json_encode([
-                                'id' => $booking->id,
-                                'code' => $code,
-                                'customer' => $custName,
-                                'email' => $custEmail,
-                                'source' => $src,
-                                'created_at' => $booking->created_at->format('d M Y, H:i') . ' WIB',
-                                'table' => ($booking->billiardTable->table_number ?? '-') . ' · ' . ($booking->billiardTable->type ?? 'Reguler'),
-                                'date' => \Carbon\Carbon::parse($booking->start_time)->translatedFormat('d M Y'),
-                                'time' => \Carbon\Carbon::parse($booking->start_time)->format('H.i') . ' – ' . \Carbon\Carbon::parse($booking->end_time)->format('H.i') . ' WIB',
-                                'duration' => $duration,
-                                'total' => 'Rp' . number_format($booking->total_price, 0, ',', '.'),
-                                'dp' => 'Rp' . number_format($booking->dp_amount, 0, ',', '.'),
-                                'remaining' => 'Rp' . number_format($remainingAmount, 0, ',', '.'),
-                                'status' => $booking->status,
-                                'confirm_url' => route('admin.bookings.confirm', $booking->id)
-                            ]);
-                        @endphp
+                    <template x-for="booking in filteredOrders" :key="booking.id">
                         <tr class="hover:bg-emerald-50/30 cursor-pointer transition"
-                            @click="selectedBooking = {{ $jsonData }}"
-                            x-show="(
-                                (search === '' || '{{ strtolower($custName) }}'.includes(search.toLowerCase()) || '{{ strtolower($code) }}'.includes(search.toLowerCase())) &&
-                                (statusFilter === '' || statusFilter === '{{ $booking->status }}') &&
-                                (sourceFilter === '' || (sourceFilter === 'walkin' && {{ $booking->is_walkin ? 'true' : 'false' }}) || (sourceFilter === 'online' && !{{ $booking->is_walkin ? 'true' : 'false' }}))
-                            )">
+                            :class="selectedBooking && selectedBooking.id === booking.id ? 'bg-emerald-50/40' : ''"
+                            @click="selectOrder(booking)">
                             <td class="py-4 px-6 font-mono font-bold text-gray-900 whitespace-nowrap">
-                                {{ $code }}<br>
-                                <span class="text-[10px] font-normal text-gray-400">{{ $booking->created_at->format('d M Y') }}</span>
+                                <span x-text="booking.code"></span><br>
+                                <span class="text-[10px] font-normal text-gray-400" x-text="booking.created_at_date"></span>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap">
-                                <span class="font-bold text-gray-900 block">{{ $custName }}</span>
-                                <span class="text-[10px] text-gray-400">{{ $src }}</span>
+                                <span class="font-bold text-gray-900 block" x-text="booking.customer"></span>
+                                <span class="text-[10px] text-gray-400" x-text="booking.source"></span>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap">
-                                <span class="font-semibold text-gray-800 block">Meja {{ $booking->billiardTable->table_number ?? '-' }} · {{ $booking->billiardTable->type ?? 'Reguler' }}</span>
-                                <span class="text-[11px] text-gray-400">{{ \Carbon\Carbon::parse($booking->start_time)->format('H.i') }} – {{ \Carbon\Carbon::parse($booking->end_time)->format('H.i') }} WIB</span>
+                                <span class="font-semibold text-gray-800 block" x-text="booking.table_name"></span>
+                                <span class="text-[11px] text-gray-400" x-text="booking.time"></span>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap">
-                                <span class="font-bold text-gray-900 block">Rp{{ number_format($booking->total_price, 0, ',', '.') }}</span>
+                                <span class="font-bold text-gray-900 block" x-text="booking.total_formatted"></span>
                                 <span class="text-[10px] text-gray-500">
-                                    @if($booking->status === 'lunas')
-                                        Lunas (Rp{{ number_format($booking->paid_amount, 0, ',', '.') }})
-                                    @elseif($booking->status === 'dp_lunas')
-                                        DP Rp{{ number_format($booking->dp_amount, 0, ',', '.') }}
-                                    @else
-                                        Belum bayar
-                                    @endif
+                                    <template x-if="booking.status === 'lunas'">
+                                        <span x-text="'Lunas (' + booking.paid_formatted + ')'"></span>
+                                    </template>
+                                    <template x-if="booking.status === 'dp_lunas'">
+                                        <span x-text="'DP ' + booking.dp_formatted"></span>
+                                    </template>
+                                    <template x-if="booking.status === 'pending'">
+                                        <span>Belum bayar</span>
+                                    </template>
+                                    <template x-if="booking.status === 'no_show'">
+                                        <span class="text-rose-600 font-semibold">No-Show</span>
+                                    </template>
+                                    <template x-if="booking.status === 'cancelled'">
+                                        <span class="text-red-500">Dibatalkan</span>
+                                    </template>
                                 </span>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap">
-                                @if($booking->status === 'lunas')
+                                <template x-if="booking.status === 'lunas'">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                         Selesai
                                     </span>
-                                @elseif($booking->status === 'dp_lunas')
+                                </template>
+                                <template x-if="booking.status === 'dp_lunas'">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                                         DP Lunas (Pelunasan Kasir)
                                     </span>
-                                @elseif($booking->status === 'pending')
+                                </template>
+                                <template x-if="booking.status === 'pending'">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                         Menunggu DP
                                     </span>
-                                @else
+                                </template>
+                                <template x-if="booking.status === 'no_show'">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                        No-Show
+                                    </span>
+                                </template>
+                                <template x-if="booking.status === 'cancelled'">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
                                         Dibatalkan
                                     </span>
-                                @endif
+                                </template>
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap text-right">
-                                @if($booking->status === 'dp_lunas')
-                                    <form action="{{ route('admin.bookings.confirm', $booking->id) }}" method="POST"
-                                          onsubmit="return confirm('Konfirmasi pelunasan sisa pembayaran Rp {{ number_format($remainingAmount, 0, ',', '.') }} untuk pesanan ini?');"
+                                <template x-if="booking.status === 'dp_lunas'">
+                                    <form :action="booking.confirm_url" method="POST"
+                                          @submit="return confirm('Konfirmasi pelunasan sisa pembayaran ' + booking.remaining_formatted + ' untuk pesanan ini?');"
                                           class="inline-block" @click.stop>
                                         @csrf
                                         <button type="submit" class="px-3 py-1.5 bg-[#1B5E43] hover:bg-[#154b35] text-white rounded-lg text-xs font-bold transition shadow-sm">
                                             Konfirmasi Pelunasan
                                         </button>
                                     </form>
-                                @else
+                                </template>
+                                <template x-if="booking.status !== 'dp_lunas'">
                                     <span class="text-gray-400 text-xs">Pilih untuk detail &rarr;</span>
-                                @endif
+                                </template>
                             </td>
                         </tr>
-                    @empty
+                    </template>
+                    <template x-if="filteredOrders.length === 0">
                         <tr>
                             <td colspan="6" class="py-12 px-6 text-center text-gray-400">
-                                Belum ada pesanan terdaftar.
+                                Tidak ada pesanan yang sesuai dengan filter atau pencarian.
                             </td>
                         </tr>
-                    @endforelse
+                    </template>
                 </tbody>
             </table>
         </div>
@@ -237,9 +259,10 @@
                               'bg-emerald-50 text-emerald-800 border border-emerald-200': selectedBooking.status === 'dp_lunas',
                               'bg-gray-100 text-gray-700 border border-gray-200': selectedBooking.status === 'lunas',
                               'bg-amber-50 text-amber-800 border border-amber-200': selectedBooking.status === 'pending',
+                              'bg-rose-50 text-rose-800 border border-rose-200': selectedBooking.status === 'no_show',
                               'bg-red-50 text-red-800 border border-red-200': selectedBooking.status === 'cancelled'
                           }"
-                          x-text="selectedBooking.status === 'dp_lunas' ? 'DP Lunas (Menunggu Pelunasan)' : (selectedBooking.status === 'lunas' ? 'Lunas / Selesai' : selectedBooking.status)">
+                          x-text="selectedBooking.status === 'dp_lunas' ? 'DP Lunas (Menunggu Pelunasan)' : (selectedBooking.status === 'lunas' ? 'Lunas / Selesai' : (selectedBooking.status === 'no_show' ? 'No-Show (Melewati Jam Selesai)' : selectedBooking.status))">
                     </span>
                 </div>
             </div>
@@ -318,4 +341,71 @@
     </template>
 
 </div>
+
+<script>
+    function adminBookingsManager(initialData) {
+        return {
+            search: '',
+            statusFilter: '',
+            sourceFilter: '',
+            orders: initialData.orders || [],
+            metrics: initialData.metrics || {},
+            selectedBooking: initialData.orders && initialData.orders.length > 0 ? initialData.orders[0] : null,
+            pollingTimer: null,
+
+            initRealtime() {
+                this.pollingTimer = setInterval(() => {
+                    this.fetchBookings();
+                }, 3000);
+            },
+
+            get filteredOrders() {
+                return this.orders.filter(booking => {
+                    const s = (this.search || '').toLowerCase().trim();
+                    const matchSearch = !s ||
+                        (booking.customer && booking.customer.toLowerCase().includes(s)) ||
+                        (booking.code && booking.code.toLowerCase().includes(s));
+
+                    const matchStatus = !this.statusFilter || booking.status === this.statusFilter;
+
+                    const matchSource = !this.sourceFilter ||
+                        (this.sourceFilter === 'walkin' && booking.is_walkin) ||
+                        (this.sourceFilter === 'online' && !booking.is_walkin);
+
+                    return matchSearch && matchStatus && matchSource;
+                });
+            },
+
+            selectOrder(order) {
+                this.selectedBooking = order;
+            },
+
+            async fetchBookings() {
+                try {
+                    const res = await fetch('{{ route('admin.realtime.bookings') }}', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'success') {
+                            this.orders = data.orders;
+                            this.metrics = data.metrics;
+
+                            if (this.selectedBooking) {
+                                const updated = this.orders.find(o => o.id === this.selectedBooking.id);
+                                if (updated) {
+                                    this.selectedBooking = updated;
+                                }
+                            } else if (this.orders.length > 0) {
+                                this.selectedBooking = this.orders[0];
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Fail silently on network errors
+                }
+            }
+        };
+    }
+</script>
 @endsection

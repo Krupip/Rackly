@@ -139,36 +139,19 @@
                             </div>
                         </div>
 
-                        <!-- Metode Pembayaran Tabs / Info -->
+                        <!-- Midtrans Direct Payment Trigger -->
                         <div class="pt-2">
-                            <label class="block text-sm font-bold text-gray-900 mb-3">Pilihan Metode Pembayaran Midtrans</label>
-                            
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                                <div class="border-2 border-[#1B5E43] bg-emerald-50/40 rounded-xl p-3 text-center cursor-pointer transition">
-                                    <svg class="w-6 h-6 mx-auto mb-1.5 text-[#1B5E43]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                    <span class="text-xs font-bold text-[#1B5E43] block">Transfer Bank</span>
-                                </div>
-                                <div class="border border-gray-200 bg-white rounded-xl p-3 text-center opacity-85">
-                                    <svg class="w-6 h-6 mx-auto mb-1.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-                                    <span class="text-xs font-semibold text-gray-700 block">QRIS</span>
-                                </div>
-                                <div class="border border-gray-200 bg-white rounded-xl p-3 text-center opacity-85">
-                                    <svg class="w-6 h-6 mx-auto mb-1.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                                    <span class="text-xs font-semibold text-gray-700 block">E-Wallet</span>
-                                </div>
-                                <div class="border border-gray-200 bg-white rounded-xl p-3 text-center opacity-85">
-                                    <svg class="w-6 h-6 mx-auto mb-1.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                                    <span class="text-xs font-semibold text-gray-700 block">Kartu</span>
-                                </div>
-                            </div>
-
-                            <!-- Midtrans Action Trigger -->
-                            <div class="bg-gray-50 border border-gray-200/80 rounded-xl p-6 text-center space-y-4">
-                                <div class="max-w-md mx-auto">
-                                    <h3 class="text-base font-bold text-gray-900 mb-1">Bayar Praktis via Midtrans Gateway</h3>
-                                    <p class="text-xs text-gray-500 mb-4">Mendukung BCA, Mandiri, BNI, BRI Virtual Account, QRIS Gopay, ShopeePay, OVO, serta Kartu Kredit.</p>
+                            <div class="bg-gray-50 border border-gray-200/80 rounded-2xl p-6 sm:p-8 text-center space-y-4">
+                                <div class="max-w-md mx-auto space-y-3">
+                                    <div class="w-12 h-12 bg-emerald-50 text-[#1B5E43] rounded-2xl flex items-center justify-center mx-auto">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    </div>
+                                    <h3 class="text-base sm:text-lg font-bold text-gray-900">Pembayaran Praktis via Midtrans</h3>
+                                    <p class="text-xs text-gray-500 leading-relaxed">
+                                        Pilih metode pembayaran (Transfer Virtual Account, QRIS Gopay / ShopeePay, atau Kartu Kredit) langsung dari jendela pop-up Midtrans yang muncul setelah menekan tombol di bawah.
+                                    </p>
                                     
-                                    <button id="pay-button" class="w-full bg-[#1B5E43] hover:bg-[#154b35] text-white font-bold py-3.5 px-6 rounded-xl shadow-md shadow-[#1B5E43]/20 transition duration-200 flex items-center justify-center gap-2 text-base">
+                                    <button id="pay-button" class="w-full bg-[#1B5E43] hover:bg-[#154b35] text-white font-bold py-4 px-6 rounded-xl shadow-md shadow-[#1B5E43]/20 transition duration-200 flex items-center justify-center gap-2 text-base cursor-pointer">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                         Bayar Sekarang (Buka Midtrans)
                                     </button>

@@ -9,9 +9,33 @@
     $currentDp = (int) ($settings->get('dp_percentage')?->value ?? 30);
     $currentDpNominal = (int) ($settings->get('dp_nominal')?->value ?? 50000);
     $currentExpiry = (int) ($settings->get('dp_expiry_minutes')?->value ?? 15);
+    $currentOpenHour = $settings->get('open_hour')?->value ?? '10:00';
+    $currentCloseHour = $settings->get('close_hour')?->value ?? '23:00';
 @endphp
 
-<div x-data="settingsSimulator('{{ $currentDpType }}', {{ $currentDp }}, {{ $currentDpNominal }}, {{ $currentExpiry }})" class="space-y-8">
+<div x-data="settingsSimulator('{{ $currentDpType }}', {{ $currentDp }}, {{ $currentDpNominal }}, {{ $currentExpiry }}, '{{ $currentOpenHour }}', '{{ $currentCloseHour }}')" class="space-y-8">
+    
+    <!-- Notification Toast: Perubahan Dibatalkan -->
+    <div x-show="showResetNotice"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-2"
+         class="fixed top-20 right-6 z-50 bg-gray-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-gray-700/60 text-xs font-semibold"
+         style="display: none;">
+        <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </div>
+        <div>
+            <p class="font-bold text-white text-xs">Perubahan dibatalkan</p>
+            <p class="text-[11px] text-gray-300 font-normal">Semua pengaturan (termasuk jam buka & jam tutup) telah dikembalikan ke nilai semula.</p>
+        </div>
+        <button type="button" @click="showResetNotice = false" class="ml-2 text-gray-400 hover:text-white transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
     
     <!-- Header -->
     <div>
@@ -168,6 +192,44 @@
                         <p class="text-[11px] text-gray-400 mt-1">Pesanan otomatis kedaluwarsa dan slot dilepas jika DP belum dibayar.</p>
                     </div>
 
+                    <!-- Jam Operasional Klub -->
+                    <div class="pt-5 border-t border-gray-100 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-900">Jam Operasional Klub</h3>
+                            <p class="text-xs text-gray-400 mt-0.5">Menentukan rentang waktu pemilihan jam bermain di form booking & walk-in, serta display jam buka di halaman utama.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="open_hour" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                    Jam Buka <span class="text-red-500">*</span>
+                                </label>
+                                <input type="time" id="open_hour" name="open_hour"
+                                       x-model="openHour"
+                                       required
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                                <p class="text-[11px] text-gray-400 mt-1">Format: HH:MM (Contoh: 10:00)</p>
+                                @error('open_hour')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="close_hour" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                    Jam Tutup <span class="text-red-500">*</span>
+                                </label>
+                                <input type="time" id="close_hour" name="close_hour"
+                                       x-model="closeHour"
+                                       required
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                                <p class="text-[11px] text-gray-400 mt-1">Format: HH:MM (Contoh: 23:00)</p>
+                                @error('close_hour')
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Action Buttons -->
                     <div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
                         <button type="button" @click="reset()"
@@ -291,12 +353,16 @@
 </div>
 
 <script>
-    function settingsSimulator(initialType, initialDp, initialNominal, initialExpiry) {
+    function settingsSimulator(initialType, initialDp, initialNominal, initialExpiry, initialOpenHour, initialCloseHour) {
         return {
             dpType: initialType || 'percentage',
             dpPct: initialDp || 30,
             dpNominal: initialNominal || 50000,
             dpExpiry: initialExpiry || 15,
+            openHour: initialOpenHour || '10:00',
+            closeHour: initialCloseHour || '23:00',
+            showResetNotice: false,
+            resetNoticeTimeout: null,
             simPrice: 80000,
             simDuration: 2,
 
@@ -320,6 +386,14 @@
                 this.dpPct = initialDp || 30;
                 this.dpNominal = initialNominal || 50000;
                 this.dpExpiry = initialExpiry || 15;
+                this.openHour = initialOpenHour || '10:00';
+                this.closeHour = initialCloseHour || '23:00';
+
+                this.showResetNotice = true;
+                if (this.resetNoticeTimeout) clearTimeout(this.resetNoticeTimeout);
+                this.resetNoticeTimeout = setTimeout(() => {
+                    this.showResetNotice = false;
+                }, 4000);
             },
 
             formatRupiah(num) {

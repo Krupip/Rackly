@@ -113,7 +113,7 @@
             $countAll = $bookings->count();
             $countAktif = $bookings->whereIn('status', ['pending', 'dp_lunas'])->count();
             $countSelesai = $bookings->where('status', 'lunas')->count();
-            $countBatal = $bookings->where('status', 'cancelled')->count();
+            $countBatal = $bookings->whereIn('status', ['cancelled', 'no_show'])->count();
         @endphp
 
         <!-- Filter Tabs -->
@@ -160,7 +160,7 @@
                         $cat = 'aktif';
                     } elseif ($booking->status === 'lunas') {
                         $cat = 'selesai';
-                    } elseif ($booking->status === 'cancelled') {
+                    } elseif (in_array($booking->status, ['cancelled', 'no_show'])) {
                         $cat = 'batal';
                     }
                 @endphp
@@ -191,6 +191,11 @@
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                     Menunggu Pembayaran
+                                </span>
+                            @elseif($booking->status === 'no_show')
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                    No-Show (Lewat Waktu)
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-800 border border-red-200">
@@ -249,6 +254,8 @@
                                 DP Rp{{ number_format($booking->dp_amount, 0, ',', '.') }} sudah dibayar. Pelunasan sisa <strong class="text-gray-700">Rp{{ number_format($remaining, 0, ',', '.') }}</strong> dibayar di kasir saat datang.
                             @elseif($booking->status === 'lunas')
                                 Pembayaran lunas. Terima kasih sudah bermain bersama kami!
+                            @elseif($booking->status === 'no_show')
+                                Pesanan dinyatakan No-Show karena melewati jadwal selesai bermain.
                             @else
                                 Pesanan ini telah dibatalkan.
                             @endif

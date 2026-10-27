@@ -461,17 +461,29 @@
                 existingBookings: existingBookings || [],
                 openHour: openHour || '10:00',
                 closeHour: closeHour || '23:00',
-                selectedDate: '{{ date('Y-m-d') }}',
-                calYear: new Date().getFullYear(),
-                calMonth: new Date().getMonth(), // 0-11
-                startTime: '',
-                endTime: '',
+                selectedDate: '{{ old('booking_date', request('date', date('Y-m-d'))) }}',
+                calYear: new Date('{{ old('booking_date', request('date', date('Y-m-d'))) }}').getFullYear() || new Date().getFullYear(),
+                calMonth: new Date('{{ old('booking_date', request('date', date('Y-m-d'))) }}').getMonth() || new Date().getMonth(), // 0-11
+                startTime: '{{ old('start_time', request('start', '')) }}',
+                endTime: '{{ old('end_time', request('end', '')) }}',
 
                 init() {
-                    const todayDate = new Date();
-                    this.calYear = todayDate.getFullYear();
-                    this.calMonth = todayDate.getMonth();
-                    this.autoSelectAvailableSlot();
+                    const presetDate = '{{ old('booking_date', request('date', '')) }}';
+                    if (presetDate) {
+                        const d = new Date(presetDate);
+                        if (!isNaN(d.getTime())) {
+                            this.calYear = d.getFullYear();
+                            this.calMonth = d.getMonth();
+                            this.selectedDate = presetDate;
+                        }
+                    } else {
+                        const todayDate = new Date();
+                        this.calYear = todayDate.getFullYear();
+                        this.calMonth = todayDate.getMonth();
+                    }
+                    if (!this.startTime || !this.endTime) {
+                        this.autoSelectAvailableSlot();
+                    }
                 },
 
                 // Calendar Navigation

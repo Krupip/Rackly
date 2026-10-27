@@ -167,21 +167,27 @@
 
     {{-- TABLE CATALOG --}}
     <section id="pilih-meja" class="py-20 bg-gray-50"
-             x-data="homeTableCatalog({{ json_encode($tables->map(function($t, $idx) {
-                 return [
-                     'id' => $t->id,
-                     'table_number' => $t->table_number,
-                     'type' => $t->type,
-                     'index_label' => str_pad($idx + 1, 2, '0', STR_PAD_LEFT),
-                     'price_per_hour' => (int) $t->price_per_hour,
-                     'formatted_price' => 'Rp ' . number_format($t->price_per_hour, 0, ',', '.'),
-                     'is_occupied' => false,
-                     'booking_url' => route('bookings.create', $t->id),
-                 ];
-             })) }}, {{ Auth::check() ? 'true' : 'false' }})"
+             x-data="homeTableCatalog(
+                 {{ json_encode($tables->map(function($t, $idx) {
+                     return [
+                         'id' => $t->id,
+                         'table_number' => $t->table_number,
+                         'type' => $t->type,
+                         'index_label' => str_pad($idx + 1, 2, '0', STR_PAD_LEFT),
+                         'price_per_hour' => (int) $t->price_per_hour,
+                         'formatted_price' => 'Rp ' . number_format($t->price_per_hour, 0, ',', '.'),
+                         'is_occupied' => false,
+                         'booking_url' => route('bookings.create', $t->id),
+                     ];
+                 })) }},
+                 {{ Auth::check() ? 'true' : 'false' }},
+                 {{ json_encode($existingBookings ?? []) }},
+                 '{{ $openHour ?? '10:00' }}',
+                 '{{ $closeHour ?? '23:00' }}'
+             )"
              x-init="initRealtime()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-xs font-semibold uppercase tracking-widest text-brand-green">Pilihan untuk setiap permainan</span>
@@ -193,11 +199,137 @@
                     <h2 class="text-4xl font-black text-gray-900">Pilih sudut bermainmu.</h2>
                     <p class="text-gray-500 mt-2">Cek ketersediaan dan temukan meja yang pas untuk main hari ini.</p>
                 </div>
-                <a href="#pilih-meja" class="hidden md:block text-sm text-brand-green font-semibold underline underline-offset-2">Lihat semua meja →</a>
             </div>
 
+            <!-- Filter Ketersediaan Meja Bar -->
+            <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200/80 shadow-sm mb-10 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-[#1B5E43] flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-gray-900">Filter Jadwal Bermain</h3>
+                            <p class="text-xs text-gray-400">Pilih tanggal, jam mulai, dan jam selesai untuk melihat meja yang tersedia.</p>
+                        </div>
+                    </div>
+
+                    <template x-if="isFilterActive || filterDate || filterStartTime || filterEndTime">
+                        <button type="button" @click="resetFilter()"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-600 transition self-start sm:self-auto py-1.5 px-3 rounded-lg hover:bg-red-50">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            Reset Filter
+                        </button>
+                    </template>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- 1. Tanggal Main -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                Tanggal Main
+                            </label>
+                            <div class="flex items-center gap-1.5 text-[11px]">
+                                <button type="button" @click="setQuickDate(0)"
+                                        class="text-gray-500 hover:text-[#1B5E43] font-medium underline underline-offset-2">
+                                    Hari Ini
+                                </button>
+                                <span class="text-gray-300">·</span>
+                                <button type="button" @click="setQuickDate(1)"
+                                        class="text-gray-500 hover:text-[#1B5E43] font-medium underline underline-offset-2">
+                                    Besok
+                                </button>
+                            </div>
+                        </div>
+                        <input type="date" x-model="filterDate" min="{{ date('Y-m-d') }}" @change="onDateChange()"
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                    </div>
+
+                    <!-- 2. Jam Mulai -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                            Jam Mulai
+                        </label>
+                        <div class="relative">
+                            <button type="button" @click="if(filterDate) { openStart = !openStart; openEnd = false; } else { alert('Pilih tanggal main terlebih dahulu'); }"
+                                    :disabled="!filterDate"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 flex justify-between items-center text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                                <span x-text="filterStartTime ? filterStartTime + ' WIB' : '-- Pilih Jam Mulai --'"></span>
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="openStart" @click.outside="openStart = false"
+                                 class="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto py-1 text-xs">
+                                <template x-for="item in availableStartHours" :key="item">
+                                    <button type="button"
+                                            @click="if(!isPastHour(item)) { selectStartTime(item); }"
+                                            :disabled="isPastHour(item)"
+                                            class="w-full px-4 py-2 text-left transition flex items-center justify-between font-semibold"
+                                            :class="{
+                                                'bg-emerald-50 text-[#1B5E43] font-bold': filterStartTime === item,
+                                                'opacity-40 bg-gray-50 text-gray-400 cursor-not-allowed': isPastHour(item),
+                                                'text-gray-700 hover:bg-[#1B5E43] hover:text-white': !isPastHour(item) && filterStartTime !== item
+                                            }">
+                                        <span x-text="item + ' WIB'"></span>
+                                        <span x-show="isPastHour(item)" class="text-[10px] text-gray-400 font-normal italic">(Sudah lewat)</span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Jam Selesai -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                            Jam Selesai
+                        </label>
+                        <div class="relative">
+                            <button type="button" @click="if(filterStartTime){ openEnd = !openEnd; openStart = false; }"
+                                    :disabled="!filterStartTime"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 flex justify-between items-center text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                                <span x-text="filterEndTime ? filterEndTime + ' WIB' : (filterStartTime ? '-- Pilih Jam Selesai --' : 'Pilih Jam Mulai Dulu')"></span>
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="openEnd && filterStartTime" @click.outside="openEnd = false"
+                                 class="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto py-1 text-xs">
+                                <template x-for="item in availableEndHours" :key="item">
+                                    <button type="button"
+                                            @click="if(!isPastHour(item, true)) { selectEndTime(item); }"
+                                            :disabled="isPastHour(item, true)"
+                                            class="w-full px-4 py-2 text-left transition flex items-center justify-between font-semibold"
+                                            :class="{
+                                                'bg-emerald-50 text-[#1B5E43] font-bold': filterEndTime === item,
+                                                'opacity-40 bg-gray-50 text-gray-400 cursor-not-allowed': isPastHour(item, true),
+                                                'text-gray-700 hover:bg-[#1B5E43] hover:text-white': !isPastHour(item, true) && filterEndTime !== item
+                                            }">
+                                        <span x-text="item + ' WIB'"></span>
+                                        <span x-show="isPastHour(item, true)" class="text-[10px] text-gray-400 font-normal italic">(Sudah lewat)</span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Filter Active Banner -->
+                <template x-if="isFilterActive">
+                    <div class="bg-emerald-50/90 border border-emerald-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-950">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
+                            <span>
+                                Filter aktif: Menampilkan <strong class="text-emerald-900" x-text="filteredTables.length"></strong> meja yang tersedia untuk tanggal <strong class="text-emerald-900" x-text="formatDateIndo(filterDate)"></strong> pukul <strong class="text-emerald-900" x-text="filterStartTime + ' – ' + filterEndTime + ' WIB'"></strong>.
+                            </span>
+                        </div>
+                        <span class="text-[11px] font-semibold text-emerald-700 shrink-0 bg-white/80 border border-emerald-200/80 px-2.5 py-1 rounded-full">
+                            Hanya Meja Tersedia
+                        </span>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Grid Meja (Hanya Menampilkan Meja Tersedia saat Filter Aktif) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <template x-for="table in tables" :key="table.id">
+                <template x-for="table in filteredTables" :key="table.id">
                     <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group">
                         {{-- Table Image --}}
                         <div class="relative h-48 overflow-hidden bg-gray-800">
@@ -205,11 +337,21 @@
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90">
                             
                             <div class="absolute top-3 left-3">
-                                <template x-if="!table.is_occupied">
-                                    <span class="bg-green-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">● Tersedia</span>
+                                <template x-if="isFilterActive">
+                                    <span class="bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                                        Tersedia di Jam Ini
+                                    </span>
                                 </template>
-                                <template x-if="table.is_occupied">
-                                    <span class="bg-amber-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">● Sedang Digunakan</span>
+                                <template x-if="!isFilterActive">
+                                    <div>
+                                        <template x-if="!table.is_occupied">
+                                            <span class="bg-green-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">● Tersedia</span>
+                                        </template>
+                                        <template x-if="table.is_occupied">
+                                            <span class="bg-amber-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">● Sedang Digunakan</span>
+                                        </template>
+                                    </div>
                                 </template>
                             </div>
                             
@@ -231,7 +373,7 @@
                             </p>
 
                             <template x-if="isAuth">
-                                <a :href="table.booking_url"
+                                <a :href="getBookingUrl(table)"
                                    class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2.5 px-4 rounded-lg transition text-sm">
                                     Booking meja <span x-text="table.index_label"></span> →
                                 </a>
@@ -246,12 +388,27 @@
                     </div>
                 </template>
 
-                <template x-if="tables.length === 0">
-                    <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
-                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <svg width="24" height="24" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M12 8v8"/></svg>
+                <template x-if="filteredTables.length === 0">
+                    <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300 p-8">
+                        <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
-                        <p class="text-gray-500 font-medium">Semua meja sedang tidak tersedia saat ini.</p>
+                        <template x-if="isFilterActive">
+                            <div>
+                                <h4 class="text-base font-bold text-gray-900 mb-1">Tidak Ada Meja yang Tersedia</h4>
+                                <p class="text-gray-500 text-sm max-w-md mx-auto mb-5">
+                                    Seluruh meja sudah dibooking pada jam <strong x-text="filterStartTime + ' – ' + filterEndTime + ' WIB'"></strong> tanggal <strong x-text="formatDateIndo(filterDate)"></strong>. Silakan coba pilih jam atau tanggal lain.
+                                </p>
+                                <button type="button" @click="resetFilter()"
+                                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-green hover-brand text-white rounded-xl text-xs font-bold transition shadow-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    Tampilkan Semua Meja (Reset Filter)
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="!isFilterActive">
+                            <p class="text-gray-500 font-medium">Semua meja sedang tidak tersedia saat ini.</p>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -489,11 +646,19 @@
             });
         });
 
-        // Real-time Home Table Catalog
-        function homeTableCatalog(initialTables, isAuth) {
+        // Real-time Home Table Catalog with Date/Time Availability Filter
+        function homeTableCatalog(initialTables, isAuth, initialBookings, openHour, closeHour) {
             return {
                 tables: initialTables || [],
                 isAuth: !!isAuth,
+                existingBookings: initialBookings || [],
+                openHour: openHour || '10:00',
+                closeHour: closeHour || '23:00',
+                filterDate: '',
+                filterStartTime: '',
+                filterEndTime: '',
+                openStart: false,
+                openEnd: false,
                 pollingTimer: null,
 
                 initRealtime() {
@@ -513,10 +678,160 @@
                             if (data && data.tables) {
                                 this.tables = data.tables;
                             }
+                            if (data && data.existingBookings) {
+                                this.existingBookings = data.existingBookings;
+                            }
                         }
                     } catch (err) {
                         // Silent catch on network blip
                     }
+                },
+
+                setQuickDate(offsetDays) {
+                    const d = new Date();
+                    d.setDate(d.getDate() + offsetDays);
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    this.filterDate = `${yyyy}-${mm}-${dd}`;
+                    this.onDateChange();
+                },
+
+                parseHour(timeStr, isEnd = false) {
+                    if (!timeStr) return 0;
+                    let h = parseInt(timeStr.split(':')[0], 10);
+                    if (isEnd && h === 0) h = 24;
+                    return h;
+                },
+
+                isPastHour(timeStr, isEnd = false) {
+                    if (!timeStr || !this.filterDate) return false;
+                    const todayStr = '{{ date('Y-m-d') }}';
+                    if (this.filterDate < todayStr) return true;
+                    if (this.filterDate > todayStr) return false;
+
+                    let hour = parseInt(timeStr.split(':')[0], 10);
+                    if (isEnd && hour === 0) hour = 24;
+                    const nowH = new Date().getHours();
+                    return hour <= nowH;
+                },
+
+                get availableStartHours() {
+                    let openH = parseInt(this.openHour.split(':')[0], 10);
+                    let closeH = parseInt(this.closeHour.split(':')[0], 10);
+                    if (closeH <= openH && closeH > 0) closeH += 24;
+                    else if (closeH === 0) closeH = 24;
+
+                    let hours = [];
+                    for (let i = openH; i < closeH; i++) {
+                        hours.push((i % 24).toString().padStart(2, '0') + ':00');
+                    }
+                    return hours;
+                },
+
+                get availableEndHours() {
+                    if (!this.filterStartTime) return [];
+                    let start = parseInt(this.filterStartTime.split(':')[0], 10);
+                    let openH = parseInt(this.openHour.split(':')[0], 10);
+                    let closeH = parseInt(this.closeHour.split(':')[0], 10);
+                    if (closeH <= openH && closeH > 0) closeH += 24;
+                    else if (closeH === 0) closeH = 24;
+
+                    let hours = [];
+                    for (let i = start + 1; i <= closeH; i++) {
+                        hours.push((i === 24 ? '00:00' : (i % 24).toString().padStart(2, '0') + ':00'));
+                    }
+                    return hours;
+                },
+
+                selectStartTime(item) {
+                    this.filterStartTime = item;
+                    this.openStart = false;
+                    let startH = parseInt(item.split(':')[0], 10);
+                    let nextH = startH + 1;
+                    let openH = parseInt(this.openHour.split(':')[0], 10);
+                    let closeH = parseInt(this.closeHour.split(':')[0], 10);
+                    if (closeH <= openH && closeH > 0) closeH += 24;
+                    else if (closeH === 0) closeH = 24;
+
+                    if (!this.filterEndTime || this.parseHour(this.filterEndTime, true) <= startH) {
+                        if (nextH <= closeH) {
+                            this.filterEndTime = (nextH === 24 ? '00:00' : (nextH % 24).toString().padStart(2, '0') + ':00');
+                        }
+                    }
+                },
+
+                selectEndTime(item) {
+                    this.filterEndTime = item;
+                    this.openEnd = false;
+                },
+
+                onDateChange() {
+                    if (this.filterStartTime && this.isPastHour(this.filterStartTime)) {
+                        this.filterStartTime = '';
+                        this.filterEndTime = '';
+                    }
+                },
+
+                resetFilter() {
+                    this.filterDate = '';
+                    this.filterStartTime = '';
+                    this.filterEndTime = '';
+                    this.openStart = false;
+                    this.openEnd = false;
+                },
+
+                get isFilterActive() {
+                    return !!(this.filterDate && this.filterStartTime && this.filterEndTime);
+                },
+
+                isTableConflict(tableId) {
+                    if (!this.isFilterActive) return false;
+
+                    const sH = this.parseHour(this.filterStartTime, false);
+                    const eH = this.parseHour(this.filterEndTime, true);
+                    if (eH <= sH) return false;
+
+                    return this.existingBookings.some(b => {
+                        if (parseInt(b.table_id) !== parseInt(tableId)) return false;
+                        if (b.date !== this.filterDate) return false;
+
+                        const bStart = this.parseHour(b.start, false);
+                        const bEnd   = this.parseHour(b.end, true);
+
+                        return sH < bEnd && eH > bStart;
+                    });
+                },
+
+                isTableAvailable(tableId) {
+                    return !this.isTableConflict(tableId);
+                },
+
+                get filteredTables() {
+                    if (!this.isFilterActive) {
+                        return this.tables;
+                    }
+                    // Ketika filter aktif, tampilkan meja yang tersedia saja
+                    return this.tables.filter(table => this.isTableAvailable(table.id));
+                },
+
+                getBookingUrl(table) {
+                    if (this.isFilterActive) {
+                        return table.booking_url + '?date=' + encodeURIComponent(this.filterDate) + '&start=' + encodeURIComponent(this.filterStartTime) + '&end=' + encodeURIComponent(this.filterEndTime);
+                    }
+                    return table.booking_url;
+                },
+
+                formatDateIndo(dateStr) {
+                    if (!dateStr) return '';
+                    try {
+                        const parts = dateStr.split('-');
+                        if (parts.length === 3) {
+                            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                        }
+                    } catch (e) {}
+                    return dateStr;
                 }
             };
         }

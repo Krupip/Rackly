@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\BilliardTable;
+use App\Models\Booking;
 use App\Models\Setting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -17,16 +19,29 @@ class HomeController extends Controller
         $dpNominal    = (int) Setting::get('dp_nominal', 50000);
         $openHour     = Setting::get('open_hour', '10:00');
         $closeHour    = Setting::get('close_hour', '23:00');
-        return view('home', compact('tables', 'dpType', 'dpPercentage', 'dpNominal', 'openHour', 'closeHour'));
+
+        $existingBookings = Booking::whereIn('status', ['pending', 'dp_lunas', 'lunas'])
+            ->whereDate('start_time', '>=', Carbon::today())
+            ->get(['billiard_table_id', 'start_time', 'end_time'])
+            ->map(function ($b) {
+                return [
+                    'table_id' => (int) $b->billiard_table_id,
+                    'date'     => Carbon::parse($b->start_time)->format('Y-m-d'),
+                    'start'    => Carbon::parse($b->start_time)->format('H:i'),
+                    'end'      => Carbon::parse($b->end_time)->format('H:i'),
+                ];
+            });
+
+        return view('home', compact('tables', 'dpType', 'dpPercentage', 'dpNominal', 'openHour', 'closeHour', 'existingBookings'));
     }
 
     // Endpoint Real-time untuk katalog meja di halaman Beranda
     public function realtimeTables()
     {
-        $now = \Carbon\Carbon::now();
+        $now = Carbon::now();
         $tables = BilliardTable::where('is_active', 1)->get()->map(function ($table, $index) use ($now) {
             // Cek apakah meja sedang aktif dipakai bermain pada jam ini
-            $isOccupied = \App\Models\Booking::where('billiard_table_id', $table->id)
+            $isOccupied = Booking::where('billiard_table_id', $table->id)
                 ->whereIn('status', ['dp_lunas', 'lunas'])
                 ->where('start_time', '<=', $now)
                 ->where('end_time', '>', $now)
@@ -44,11 +59,24 @@ class HomeController extends Controller
             ];
         });
 
+        $existingBookings = Booking::whereIn('status', ['pending', 'dp_lunas', 'lunas'])
+            ->whereDate('start_time', '>=', Carbon::today())
+            ->get(['billiard_table_id', 'start_time', 'end_time'])
+            ->map(function ($b) {
+                return [
+                    'table_id' => (int) $b->billiard_table_id,
+                    'date'     => Carbon::parse($b->start_time)->format('Y-m-d'),
+                    'start'    => Carbon::parse($b->start_time)->format('H:i'),
+                    'end'      => Carbon::parse($b->end_time)->format('H:i'),
+                ];
+            });
+
         return response()->json([
-            'status'    => 'success',
-            'tables'    => $tables,
-            'count'     => $tables->count(),
-            'timestamp' => $now->toIso8601String(),
+            'status'           => 'success',
+            'tables'           => $tables,
+            'existingBookings' => $existingBookings,
+            'count'            => $tables->count(),
+            'timestamp'        => $now->toIso8601String(),
         ]);
     }
 }

@@ -136,13 +136,13 @@
 
     <!-- Table of Orders -->
     <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-y-auto" style="max-height: 360px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
             <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50/70 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                <thead class="sticky top-0 z-10 bg-gray-50">
+                    <tr class="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                         <th class="py-3.5 px-6">Kode Pesanan</th>
                         <th class="py-3.5 px-6">Pelanggan</th>
-                        <th class="py-3.5 px-6">Meja & Jadwal</th>
+                        <th class="py-3.5 px-6">Meja &amp; Jadwal</th>
                         <th class="py-3.5 px-6">Total / Pembayaran</th>
                         <th class="py-3.5 px-6">Status Pesanan</th>
                         <th class="py-3.5 px-6 text-right">Aksi</th>

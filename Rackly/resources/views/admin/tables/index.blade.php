@@ -88,73 +88,75 @@
                 </div>
             </div>
 
-            <div class="divide-y divide-gray-100">
-                @forelse($tables as $table)
-                    @php
-                        $tableData = json_encode([
-                            'id' => $table->id,
-                            'table_number' => $table->table_number,
-                            'type' => $table->type,
-                            'price_per_hour' => $table->price_per_hour,
-                            'is_active' => (int) $table->is_active,
-                            'update_url' => route('tables.update', $table->id)
-                        ]);
-                    @endphp
-                    <div class="p-4 sm:p-5 flex items-center justify-between hover:bg-emerald-50/30 transition cursor-pointer"
-                         @click="selectedTable = {{ $tableData }}"
-                         x-show="(
-                             (search === '' || '{{ strtolower($table->table_number) }}'.includes(search.toLowerCase()) || '{{ strtolower($table->type) }}'.includes(search.toLowerCase())) &&
-                             (typeFilter === '' || typeFilter === '{{ $table->type }}')
-                         )">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-10 h-10 rounded-xl bg-[#1B5E43] text-white font-extrabold text-sm flex items-center justify-center shrink-0 shadow-sm">
-                                {{ preg_replace('/[^0-9]/', '', $table->table_number) ?: '01' }}
+            <div class="overflow-y-auto" style="max-height: 320px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
+                <div class="divide-y divide-gray-100">
+                    @forelse($tables as $table)
+                        @php
+                            $tableData = json_encode([
+                                'id' => $table->id,
+                                'table_number' => $table->table_number,
+                                'type' => $table->type,
+                                'price_per_hour' => $table->price_per_hour,
+                                'is_active' => (int) $table->is_active,
+                                'update_url' => route('tables.update', $table->id)
+                            ]);
+                        @endphp
+                        <div class="p-4 sm:p-5 flex items-center justify-between hover:bg-emerald-50/30 transition cursor-pointer"
+                             @click="selectedTable = {{ $tableData }}"
+                             x-show="(
+                                 (search === '' || '{{ strtolower($table->table_number) }}'.includes(search.toLowerCase()) || '{{ strtolower($table->type) }}'.includes(search.toLowerCase())) &&
+                                 (typeFilter === '' || typeFilter === '{{ $table->type }}')
+                             )">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl bg-[#1B5E43] text-white font-extrabold text-sm flex items-center justify-center shrink-0 shadow-sm">
+                                    {{ preg_replace('/[^0-9]/', '', $table->table_number) ?: '01' }}
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-gray-900 text-sm">Meja {{ $table->table_number }}</h3>
+                                    <p class="text-xs text-gray-400">{{ $table->type }} · 9 kaki</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="font-extrabold text-gray-900 text-sm">Meja {{ $table->table_number }}</h3>
-                                <p class="text-xs text-gray-400">{{ $table->type }} · 9 kaki</p>
+
+                            <div class="flex items-center gap-6">
+                                <span class="font-extrabold text-gray-900 text-xs sm:text-sm">
+                                    Rp{{ number_format($table->price_per_hour, 0, ',', '.') }}
+                                </span>
+
+                                <div>
+                                    @if($table->is_active)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                            Tersedia
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+                                            Perawatan
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="flex items-center gap-1.5" @click.stop>
+                                    <a href="{{ route('tables.edit', $table->id) }}" class="p-1.5 text-gray-400 hover:text-blue-600 transition" title="Edit meja">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </a>
+
+                                    <form action="{{ route('tables.destroy', $table->id) }}" method="POST"
+                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus meja ini?');" class="inline-block">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1.5 text-gray-400 hover:text-red-600 transition" title="Hapus meja">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="flex items-center gap-6">
-                            <span class="font-extrabold text-gray-900 text-xs sm:text-sm">
-                                Rp{{ number_format($table->price_per_hour, 0, ',', '.') }}
-                            </span>
-
-                            <div>
-                                @if($table->is_active)
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                                        Tersedia
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-                                        Perawatan
-                                    </span>
-                                @endif
-                            </div>
-
-                            <div class="flex items-center gap-1.5" @click.stop>
-                                <a href="{{ route('tables.edit', $table->id) }}" class="p-1.5 text-gray-400 hover:text-blue-600 transition" title="Edit meja">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                                </a>
-
-                                <form action="{{ route('tables.destroy', $table->id) }}" method="POST"
-                                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus meja ini?');" class="inline-block">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-1.5 text-gray-400 hover:text-red-600 transition" title="Hapus meja">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    </button>
-                                </form>
-                            </div>
+                    @empty
+                        <div class="p-8 text-center text-gray-400 text-xs">
+                            Belum ada meja. Klik "+ Tambah meja" untuk menambahkan.
                         </div>
-                    </div>
-                @empty
-                    <div class="p-8 text-center text-gray-400 text-xs">
-                        Belum ada meja. Klik "+ Tambah meja" untuk menambahkan.
-                    </div>
-                @endforelse
+                    @endforelse
+                </div>
             </div>
         </div>
 

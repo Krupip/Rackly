@@ -26,11 +26,8 @@
         <div class="hidden md:flex hero-bg flex-col justify-between p-10">
             {{-- Logo --}}
             <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2.5">
-                        <circle cx="12" cy="12" r="3"/>
-                        <circle cx="12" cy="12" r="9"/>
-                    </svg>
+                <div class="w-10 h-10 rounded-full bg-[#1B5E43] text-white flex items-center justify-center font-bold text-xl shadow-sm">
+                    8
                 </div>
                 <div>
                     <div class="font-bold text-white text-sm tracking-wide uppercase">Rackly</div>

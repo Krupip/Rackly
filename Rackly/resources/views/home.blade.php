@@ -43,11 +43,8 @@
             <div class="flex justify-between h-16 items-center">
                 {{-- Logo --}}
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 bg-brand-green rounded-full flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2.5">
-                            <circle cx="12" cy="12" r="3"/>
-                            <circle cx="12" cy="12" r="9"/>
-                        </svg>
+                    <div class="w-10 h-10 rounded-full bg-[#1B5E43] text-white flex items-center justify-center font-bold text-xl shadow-sm">
+                        8
                     </div>
                     <div class="leading-tight">
                         <div class="font-bold text-gray-900 text-sm tracking-wide uppercase">Rackly</div>
@@ -239,7 +236,7 @@
     </section>
 
     {{-- 3-STEP GUIDE --}}
-    <section id="cara-booking" class="py-20 bg-white">
+    <section id="cara-booking" class="py-20 bg-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-14">
                 <p class="text-xs font-semibold uppercase tracking-widest text-brand-green mb-2">Booking tanpa ribet</p>
@@ -247,12 +244,12 @@
             </div>
             <div class="grid md:grid-cols-3 gap-10">
                 <div>
-                    <div class="text-5xl font-black text-gray-100 mb-3">01</div>
+                    <div class="text-5xl font-black text-[#1A5C38] mb-3">01</div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Pilih meja & jadwal</h3>
                     <p class="text-gray-500 leading-relaxed">Tentukan meja, tanggal, dan durasi bermain. Cek slot yang tersedia secara langsung.</p>
                 </div>
                 <div>
-                    <div class="text-5xl font-black text-gray-100 mb-3">02</div>
+                    <div class="text-5xl font-black text-[#1A5C38] mb-3">02</div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">
                         @if($dpType === 'fixed')
                             Amankan dengan DP Rp{{ number_format($dpNominal, 0, ',', '.') }}
@@ -263,7 +260,7 @@
                     <p class="text-gray-500 leading-relaxed">Masuk ke akunmu dan bayar DP melalui pilihan pembayaran Midtrans.</p>
                 </div>
                 <div>
-                    <div class="text-5xl font-black text-gray-100 mb-3">03</div>
+                    <div class="text-5xl font-black text-[#1A5C38] mb-3">03</div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Datang & mulai bermain</h3>
                     <p class="text-gray-500 leading-relaxed">Tunjukan kode booking di kasir, lunasi sisanya, dan nikmati waktu bermainmu.</p>
                 </div>

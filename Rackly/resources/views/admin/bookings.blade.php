@@ -27,9 +27,6 @@
             'date' => \Carbon\Carbon::parse($b->start_time)->translatedFormat('d M Y'),
             'time' => \Carbon\Carbon::parse($b->start_time)->format('H.i') . ' – ' . \Carbon\Carbon::parse($b->end_time)->format('H.i') . ' WIB',
             'duration' => $duration,
-            'total' => 'Rp' . number_format($b->total_price, 0, ',', '.'),
-            'dp' => 'Rp' . number_format($b->dp_amount, 0, ',', '.'),
-            'remaining' => 'Rp' . number_format($remainingAmount, 0, ',', '.'),
             'total_formatted' => 'Rp' . number_format($b->total_price, 0, ',', '.'),
             'dp_formatted' => 'Rp' . number_format($b->dp_amount, 0, ',', '.'),
             'paid_formatted' => 'Rp' . number_format($b->paid_amount, 0, ',', '.'),
@@ -304,15 +301,15 @@
                     <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">PEMBAYARAN</span>
                     <div class="flex justify-between text-gray-600">
                         <span>Total</span>
-                        <strong class="text-gray-900" x-text="selectedBooking.total"></strong>
+                        <strong class="text-gray-900" x-text="selectedBooking.total_formatted"></strong>
                     </div>
                     <div class="flex justify-between text-gray-600">
                         <span>DP Terbayar</span>
-                        <strong class="text-[#1B5E43]" x-text="selectedBooking.dp"></strong>
+                        <strong class="text-[#1B5E43]" x-text="selectedBooking.dp_formatted"></strong>
                     </div>
                     <div class="flex justify-between text-gray-600 border-t border-dashed border-gray-200 pt-1">
                         <span>Sisa di lokasi</span>
-                        <strong class="text-gray-900 font-bold" x-text="selectedBooking.remaining"></strong>
+                        <strong class="text-gray-900 font-bold" x-text="selectedBooking.remaining_formatted"></strong>
                     </div>
                 </div>
             </div>

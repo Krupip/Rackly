@@ -43,13 +43,6 @@ class AdminBilliardTableController extends Controller
         return redirect()->route('tables.index')->with('success', 'Meja baru berhasil ditambahkan!');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
 
     /**
      * Show the form for editing the specified resource.

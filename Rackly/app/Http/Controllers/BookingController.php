@@ -82,7 +82,7 @@ class BookingController extends Controller
 
         // 2. Cek Jadwal Bentrok (Mencegah Double Booking / Overlapping)
         $isConflict = \App\Models\Booking::where('billiard_table_id', $table->id)
-            ->whereIn('status', ['pending', 'dp_lunas', 'lunas', 'paid'])
+            ->whereIn('status', ['pending', 'dp_lunas', 'lunas'])
             ->where(function ($query) use ($start, $end) {
                 // Logika Estafet: Izinkan booking jika jam mulai = jam selesai orang lain
                 $query->where('start_time', '<', $end)

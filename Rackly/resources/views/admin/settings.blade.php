@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Pengaturan Uang Muka — Admin Rackly Billiard')
-@section('breadcrumb', 'Operasional / Pengaturan DP')
+@section('breadcrumb', 'Operasional / Pengaturan')
 
 @section('content')
 @php
@@ -39,8 +39,8 @@
     
     <!-- Header -->
     <div>
-        <span class="text-xs font-bold tracking-wider text-[#1B5E43] uppercase block mb-1">KONFIGURASI / PEMBAYARAN</span>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Pengaturan uang muka</h1>
+        <span class="text-xs font-bold tracking-wider text-[#1B5E43] uppercase block mb-1">KONFIGURASI</span>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Pengaturan Bisnis</h1>
         <p class="text-xs sm:text-sm text-gray-500 mt-1">Tentukan DP booking online. Transparan untuk pelanggan, terkontrol untuk klub.</p>
     </div>
 
@@ -73,18 +73,6 @@
                 <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-6">
                     @csrf
                     @method('PATCH')
-
-                    <!-- Wajibkan DP Toggle Row -->
-                    <div class="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl">
-                        <div>
-                            <span class="text-sm font-bold text-gray-900 block">Wajibkan DP untuk booking online</span>
-                            <span class="text-xs text-gray-400">Jadwal dikonfirmasi setelah pembayaran DP berhasil.</span>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" checked disabled class="sr-only peer">
-                            <div class="w-11 h-6 bg-[#1B5E43] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                        </label>
-                    </div>
 
                     <!-- Hidden dp_type input bound to Alpine dpType -->
                     <input type="hidden" name="dp_type" :value="dpType">

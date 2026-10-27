@@ -461,15 +461,16 @@
                 existingBookings: existingBookings || [],
                 openHour: openHour || '10:00',
                 closeHour: closeHour || '23:00',
-                selectedDate: '{{ old('booking_date', request('date', date('Y-m-d'))) }}',
-                calYear: new Date('{{ old('booking_date', request('date', date('Y-m-d'))) }}').getFullYear() || new Date().getFullYear(),
-                calMonth: new Date('{{ old('booking_date', request('date', date('Y-m-d'))) }}').getMonth() || new Date().getMonth(), // 0-11
+                todayStr: '{{ date('Y-m-d') }}',
+                selectedDate: '{{ (old('booking_date', request('date', date('Y-m-d'))) >= date('Y-m-d')) ? old('booking_date', request('date', date('Y-m-d'))) : date('Y-m-d') }}',
+                calYear: new Date().getFullYear(),
+                calMonth: new Date().getMonth(), // 0-11
                 startTime: '{{ old('start_time', request('start', '')) }}',
                 endTime: '{{ old('end_time', request('end', '')) }}',
 
                 init() {
                     const presetDate = '{{ old('booking_date', request('date', '')) }}';
-                    if (presetDate) {
+                    if (presetDate && presetDate >= this.todayStr) {
                         const d = new Date(presetDate);
                         if (!isNaN(d.getTime())) {
                             this.calYear = d.getFullYear();
@@ -477,9 +478,10 @@
                             this.selectedDate = presetDate;
                         }
                     } else {
-                        const todayDate = new Date();
-                        this.calYear = todayDate.getFullYear();
-                        this.calMonth = todayDate.getMonth();
+                        this.selectedDate = this.todayStr;
+                        const parts = this.todayStr.split('-');
+                        this.calYear = parseInt(parts[0], 10);
+                        this.calMonth = parseInt(parts[1], 10) - 1;
                     }
                     if (!this.startTime || !this.endTime) {
                         this.autoSelectAvailableSlot();
@@ -519,7 +521,7 @@
                     const startDayOffset = (firstDayIndex === 0 ? 6 : firstDayIndex - 1);
                     const daysInMonth = new Date(this.calYear, this.calMonth + 1, 0).getDate();
 
-                    const todayStr = '{{ date('Y-m-d') }}';
+                    const todayStr = this.todayStr;
                     const days = [];
 
                     // Leading empty days
@@ -547,6 +549,7 @@
                 },
 
                 selectDate(dateStr) {
+                    if (dateStr < this.todayStr) return;
                     this.selectedDate = dateStr;
                     this.startTime = '';
                     this.endTime = '';
@@ -565,13 +568,13 @@
                 },
 
                 get allDisplaySlots() {
-                    const todayStr = '{{ date('Y-m-d') }}';
-                    const isToday = this.selectedDate === todayStr;
+                    const isToday = this.selectedDate === this.todayStr;
+                    const isPastDate = this.selectedDate < this.todayStr;
                     const nowH = new Date().getHours();
 
                     return this.allHourList.map(timeStr => {
                         const h = parseInt(timeStr.split(':')[0]);
-                        const isPast = isToday && h <= nowH;
+                        const isPast = isPastDate || (isToday && h <= nowH);
                         const isBooked = this.checkIfSlotBooked(timeStr);
                         return {
                             time: timeStr,

@@ -217,3 +217,53 @@ test('user cannot cancel someone elses booking', function () {
     $response->assertSessionHas('error');
     expect($booking->fresh()->status)->toBe('pending');
 });
+
+test('user cannot book a date in the past', function () {
+    $user = User::factory()->create();
+    $table = BilliardTable::create([
+        'table_number' => 'Meja Past Date',
+        'type' => 'Reguler',
+        'price_per_hour' => 80000,
+        'is_active' => true,
+    ]);
+
+    $yesterday = Carbon::yesterday()->format('Y-m-d');
+
+    $response = $this->actingAs($user)->post(route('bookings.store'), [
+        'table_id' => $table->id,
+        'booking_date' => $yesterday,
+        'start_time' => '14:00',
+        'end_time' => '16:00',
+    ]);
+
+    $response->assertSessionHasErrors('booking_date');
+    expect(Booking::where('user_id', $user->id)->count())->toBe(0);
+});
+
+test('user cannot book a past hour for today', function () {
+    $user = User::factory()->create();
+    $table = BilliardTable::create([
+        'table_number' => 'Meja Past Hour',
+        'type' => 'Reguler',
+        'price_per_hour' => 80000,
+        'is_active' => true,
+    ]);
+
+    // Freeze time to 15:00 today
+    Carbon::setTestNow(Carbon::today()->setHour(15));
+
+    $today = Carbon::today()->format('Y-m-d');
+
+    $response = $this->actingAs($user)->post(route('bookings.store'), [
+        'table_id' => $table->id,
+        'booking_date' => $today,
+        'start_time' => '11:00',
+        'end_time' => '13:00',
+    ]);
+
+    $response->assertSessionHas('error');
+    expect(Booking::where('user_id', $user->id)->count())->toBe(0);
+
+    Carbon::setTestNow(); // reset
+});
+

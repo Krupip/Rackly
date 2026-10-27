@@ -69,6 +69,7 @@ class BookingController extends Controller
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
         ], [
+            'booking_date.after_or_equal' => 'Tanggal booking tidak boleh tanggal yang sudah lewat.',
             'start_time.date_format' => 'Jam mulai harus berupa format jam (contoh: 13:00).',
             'end_time.date_format' => 'Jam selesai harus berupa format jam (contoh: 15:00).',
             'end_time.after' => 'Jam selesai harus lebih besar dari jam mulai.',
@@ -79,6 +80,11 @@ class BookingController extends Controller
         // Gabungkan tanggal dan jam menjadi format DateTime utuh
         $start = Carbon::parse($request->booking_date . ' ' . $request->start_time);
         $end = Carbon::parse($request->booking_date . ' ' . $request->end_time);
+
+        // Pastikan waktu yang dipilih belum lewat dari waktu sekarang
+        if ($start->isPast()) {
+            return back()->with('error', 'Maaf, waktu jadwal yang dipilih sudah lewat. Silakan pilih waktu yang akan datang.')->withInput();
+        }
 
         // 2. Cek Jadwal Bentrok (Mencegah Double Booking / Overlapping)
         $isConflict = \App\Models\Booking::where('billiard_table_id', $table->id)

@@ -270,9 +270,9 @@
                             Jam Mulai
                         </label>
                         <div class="relative">
-                            <button type="button" @click="if(filterDate) { openStart = !openStart; openEnd = false; } else { alert('Pilih tanggal main terlebih dahulu'); }"
-                                    :disabled="!filterDate"
-                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 flex justify-between items-center text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                            <button type="button" @click="if(filterDate) { openStart = !openStart; openEnd = false; } else { showAlert('Pilih Tanggal Main', 'Silakan pilih tanggal main terlebih dahulu sebelum menentukan jam mulai.'); }"
+                                    :class="{ 'opacity-60': !filterDate }"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 flex justify-between items-center text-left focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
                                 <span x-text="filterStartTime ? filterStartTime + ' WIB' : '-- Pilih Jam Mulai --'"></span>
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
@@ -302,9 +302,9 @@
                             Jam Selesai
                         </label>
                         <div class="relative">
-                            <button type="button" @click="if(filterStartTime){ openEnd = !openEnd; openStart = false; }"
-                                    :disabled="!filterStartTime"
-                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 flex justify-between items-center text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
+                            <button type="button" @click="if(!filterDate) { showAlert('Pilih Tanggal Main', 'Silakan pilih tanggal main terlebih dahulu sebelum menentukan jam selesai.'); } else if(!filterStartTime) { showAlert('Pilih Jam Mulai', 'Silakan tentukan jam mulai terlebih dahulu sebelum memilih jam selesai.'); } else { openEnd = !openEnd; openStart = false; }"
+                                    :class="{ 'opacity-60': !filterStartTime }"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 flex justify-between items-center text-left focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
                                 <span x-text="filterEndTime ? filterEndTime + ' WIB' : (filterStartTime ? '-- Pilih Jam Selesai --' : 'Pilih Jam Mulai Dulu')"></span>
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
@@ -449,6 +449,25 @@
                         </div>
                     </template>
                 </div>
+            </div>
+        </div>
+
+        <!-- Custom Alert Popup Modal -->
+        <div x-show="alertModal.show" 
+             x-transition.opacity 
+             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" 
+             style="display: none;">
+            <div @click.outside="closeAlert()" class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center transform transition-all">
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto border border-amber-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-base font-extrabold text-gray-900" x-text="alertModal.title"></h3>
+                    <p class="text-xs text-gray-500 leading-relaxed" x-text="alertModal.message"></p>
+                </div>
+                <button type="button" @click="closeAlert()" class="w-full py-2.5 px-4 bg-[#1B5E43] hover:bg-[#154b35] text-white font-bold rounded-xl text-xs transition shadow-sm">
+                    Saya Mengerti
+                </button>
             </div>
         </div>
     </section>
@@ -697,7 +716,24 @@
                 filterEndTime: '',
                 openStart: false,
                 openEnd: false,
+                alertModal: {
+                    show: false,
+                    title: '',
+                    message: ''
+                },
                 pollingTimer: null,
+
+                showAlert(title, message) {
+                    this.alertModal = {
+                        show: true,
+                        title: title || 'Pemberitahuan',
+                        message: message || ''
+                    };
+                },
+
+                closeAlert() {
+                    this.alertModal.show = false;
+                },
 
                 initRealtime() {
                     // Poll data setiap 4 detik untuk update ketersediaan real-time

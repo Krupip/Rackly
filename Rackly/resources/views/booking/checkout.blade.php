@@ -268,9 +268,67 @@
         </div>
     </footer>
 
+    <!-- Custom Alert Popup Modal -->
+    <div id="custom-popup" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-all opacity-0 pointer-events-none duration-200">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center transform transition-all scale-95" id="custom-popup-box">
+            <div id="popup-icon-container" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto">
+                <!-- Icon injected via JS -->
+            </div>
+            <div class="space-y-1">
+                <h3 id="popup-title" class="text-base font-extrabold text-gray-900"></h3>
+                <p id="popup-message" class="text-xs text-gray-500 leading-relaxed"></p>
+            </div>
+            <button type="button" id="popup-btn" class="w-full py-2.5 px-4 text-white font-bold rounded-xl text-xs transition shadow-sm">
+                OK
+            </button>
+        </div>
+    </div>
+
     <!-- Midtrans Snap Script -->
     <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
     <script type="text/javascript">
+        function showCustomPopup({ title, message, type = 'info', btnText = 'OK', onConfirm = null }) {
+            const popup = document.getElementById('custom-popup');
+            const box = document.getElementById('custom-popup-box');
+            const iconContainer = document.getElementById('popup-icon-container');
+            const titleEl = document.getElementById('popup-title');
+            const msgEl = document.getElementById('popup-message');
+            const btn = document.getElementById('popup-btn');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            btn.textContent = btnText;
+
+            if (type === 'timeout') {
+                iconContainer.className = 'w-12 h-12 rounded-full flex items-center justify-center mx-auto bg-amber-50 text-amber-600 border border-amber-100';
+                iconContainer.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+                btn.className = 'w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition shadow-sm';
+            } else if (type === 'error') {
+                iconContainer.className = 'w-12 h-12 rounded-full flex items-center justify-center mx-auto bg-red-50 text-red-600 border border-red-100';
+                iconContainer.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+                btn.className = 'w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition shadow-sm';
+            } else {
+                iconContainer.className = 'w-12 h-12 rounded-full flex items-center justify-center mx-auto bg-emerald-50 text-[#1B5E43] border border-emerald-100';
+                iconContainer.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+                btn.className = 'w-full py-2.5 px-4 bg-[#1B5E43] hover:bg-[#154b35] text-white font-bold rounded-xl text-xs transition shadow-sm';
+            }
+
+            popup.classList.remove('opacity-0', 'pointer-events-none');
+            popup.classList.add('opacity-100', 'pointer-events-auto');
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+
+            btn.onclick = function () {
+                popup.classList.add('opacity-0', 'pointer-events-none');
+                popup.classList.remove('opacity-100', 'pointer-events-auto');
+                box.classList.add('scale-95');
+                box.classList.remove('scale-100');
+                if (typeof onConfirm === 'function') {
+                    onConfirm();
+                }
+            };
+        }
+
         // Countdown Timer
         const bookingCreatedAt = new Date("{{ $booking->created_at->toIso8601String() }}").getTime();
         const TIMEOUT_MS = {{ $expiryMinutes }} * 60 * 1000;
@@ -285,8 +343,15 @@
             if (remaining <= 0) {
                 clearInterval(timer);
                 countdownEl.textContent = '00:00';
-                alert('Waktu pembayaran telah habis. Pesanan otomatis dibatalkan.');
-                window.location.href = historyUrl;
+                showCustomPopup({
+                    title: 'Waktu Pembayaran Habis',
+                    message: 'Waktu pembayaran telah habis. Pesanan otomatis dibatalkan.',
+                    type: 'timeout',
+                    btnText: 'Lihat Riwayat Booking',
+                    onConfirm: function () {
+                        window.location.href = historyUrl;
+                    }
+                });
                 return;
             }
 
@@ -308,11 +373,23 @@
                     window.location.href = "{{ route('booking.history') }}";
                 },
                 onPending: function (result) {
-                    alert("Menunggu penyelesaian pembayaran Anda.");
-                    window.location.href = "{{ route('booking.history') }}";
+                    showCustomPopup({
+                        title: 'Menunggu Penyelesaian',
+                        message: 'Menunggu penyelesaian pembayaran Anda. Silakan selesaikan pembayaran sesuai instruksi.',
+                        type: 'info',
+                        btnText: 'Ke Riwayat Booking',
+                        onConfirm: function () {
+                            window.location.href = "{{ route('booking.history') }}";
+                        }
+                    });
                 },
                 onError: function (result) {
-                    alert("Pembayaran gagal! Silakan coba lagi.");
+                    showCustomPopup({
+                        title: 'Pembayaran Gagal',
+                        message: 'Pembayaran gagal diproses. Silakan coba lagi.',
+                        type: 'error',
+                        btnText: 'Tutup'
+                    });
                 },
                 onClose: function () {
                     // Modal ditutup

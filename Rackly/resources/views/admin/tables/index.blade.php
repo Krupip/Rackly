@@ -14,7 +14,19 @@
         'price_per_hour' => $tables->first()->price_per_hour,
         'is_active' => (int) $tables->first()->is_active,
         'update_url' => route('tables.update', $tables->first()->id)
-    ]) : 'null' }}
+    ]) : 'null' }},
+    deleteModal: {
+        show: false,
+        tableNumber: '',
+        actionUrl: ''
+    },
+    confirmDelete(number, url) {
+        this.deleteModal = {
+            show: true,
+            tableNumber: number,
+            actionUrl: url
+        };
+    }
 }" class="space-y-8">
     
     <!-- Header -->
@@ -140,14 +152,12 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                     </a>
 
-                                    <form action="{{ route('tables.destroy', $table->id) }}" method="POST"
-                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus meja ini?');" class="inline-block">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="p-1.5 text-gray-400 hover:text-red-600 transition" title="Hapus meja">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </form>
+                                    <button type="button" 
+                                            @click.stop="confirmDelete('{{ $table->table_number }}', '{{ route('tables.destroy', $table->id) }}')" 
+                                            class="p-1.5 text-gray-400 hover:text-red-600 transition" 
+                                            title="Hapus meja">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -220,6 +230,41 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Custom Delete Confirmation Modal -->
+    <div x-show="deleteModal.show" 
+         x-transition.opacity 
+         class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" 
+         style="display: none;">
+        <div @click.outside="deleteModal.show = false" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-base">Hapus Meja</h3>
+                    <p class="text-xs text-gray-500">Konfirmasi tindakan penghapusan meja.</p>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-600 leading-relaxed">
+                Apakah Anda yakin ingin menghapus <strong>Meja <span x-text="deleteModal.tableNumber"></span></strong>? Meja yang dihapus tidak dapat dipulihkan kembali.
+            </p>
+
+            <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100">
+                <button type="button" @click="deleteModal.show = false" class="px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition cursor-pointer">
+                    Batal
+                </button>
+                <form :action="deleteModal.actionUrl" method="POST" class="inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-sm">
+                        Ya, Hapus Meja
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
 </div>

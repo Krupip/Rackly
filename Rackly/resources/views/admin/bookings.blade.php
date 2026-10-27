@@ -214,14 +214,11 @@
                             </td>
                             <td class="py-4 px-6 whitespace-nowrap text-right">
                                 <template x-if="booking.status === 'dp_lunas'">
-                                    <form :action="booking.confirm_url" method="POST"
-                                          @submit="return confirm('Konfirmasi pelunasan sisa pembayaran ' + booking.remaining_formatted + ' untuk pesanan ini?');"
-                                          class="inline-block" @click.stop>
-                                        @csrf
-                                        <button type="submit" class="px-3 py-1.5 bg-[#1B5E43] hover:bg-[#154b35] text-white rounded-lg text-xs font-bold transition shadow-sm">
-                                            Konfirmasi Pelunasan
-                                        </button>
-                                    </form>
+                                    <button type="button" 
+                                            @click.stop="openConfirmModal(booking)"
+                                            class="px-3 py-1.5 bg-[#1B5E43] hover:bg-[#154b35] text-white rounded-lg text-xs font-bold transition shadow-sm">
+                                        Konfirmasi Pelunasan
+                                    </button>
                                 </template>
                                 <template x-if="booking.status !== 'dp_lunas'">
                                     <span class="text-gray-400 text-xs">Pilih untuk detail &rarr;</span>
@@ -322,20 +319,58 @@
 
                 <div class="flex items-center gap-3">
                     <template x-if="selectedBooking.status === 'dp_lunas'">
-                        <form :action="selectedBooking.confirm_url" method="POST"
-                              onsubmit="return confirm('Apakah Anda yakin sisa pembayaran sudah diterima dan pesanan ini lunas?');">
-                            @csrf
-                            <button type="submit" class="px-5 py-2.5 bg-[#1B5E43] hover:bg-[#154b35] text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                Konfirmasi Pelunasan & Selesaikan
-                            </button>
-                        </form>
+                        <button type="button" 
+                                @click="openConfirmModal(selectedBooking)"
+                                class="px-5 py-2.5 bg-[#1B5E43] hover:bg-[#154b35] text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Konfirmasi Pelunasan & Selesaikan
+                        </button>
                     </template>
                 </div>
             </div>
 
         </div>
     </template>
+
+    <!-- Custom Pelunasan Confirmation Modal -->
+    <div x-show="confirmModal.show" 
+         x-transition.opacity 
+         class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" 
+         style="display: none;">
+        <div @click.outside="confirmModal.show = false" class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-50 text-[#1B5E43] flex items-center justify-center shrink-0 border border-emerald-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 text-base">Konfirmasi Pelunasan</h3>
+                    <p class="text-xs text-gray-500" x-text="confirmModal.code + ' · ' + confirmModal.customer"></p>
+                </div>
+            </div>
+
+            <div class="bg-emerald-50/60 border border-emerald-100 rounded-xl p-3.5 space-y-1">
+                <span class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">Sisa Pembayaran di Kasir</span>
+                <p class="text-xl font-extrabold text-[#1B5E43]" x-text="confirmModal.remaining"></p>
+            </div>
+
+            <p class="text-xs text-gray-600 leading-relaxed">
+                Apakah Anda yakin sisa pembayaran sudah diterima dari pelanggan di kasir? Status pesanan akan diubah menjadi <strong>Lunas / Selesai</strong>.
+            </p>
+
+            <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100">
+                <button type="button" @click="confirmModal.show = false" class="px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition cursor-pointer">
+                    Batal
+                </button>
+                <form :action="confirmModal.actionUrl" method="POST" class="inline">
+                    @csrf
+                    <button type="submit" class="px-5 py-2 bg-[#1B5E43] hover:bg-[#154b35] text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Ya, Konfirmasi Lunas
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
 </div>
 
@@ -349,6 +384,23 @@
             metrics: initialData.metrics || {},
             selectedBooking: initialData.orders && initialData.orders.length > 0 ? initialData.orders[0] : null,
             pollingTimer: null,
+            confirmModal: {
+                show: false,
+                actionUrl: '',
+                code: '',
+                customer: '',
+                remaining: ''
+            },
+
+            openConfirmModal(booking) {
+                this.confirmModal = {
+                    show: true,
+                    actionUrl: booking.confirm_url,
+                    code: booking.code,
+                    customer: booking.customer,
+                    remaining: booking.remaining_formatted
+                };
+            },
 
             initRealtime() {
                 this.pollingTimer = setInterval(() => {

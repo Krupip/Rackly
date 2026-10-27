@@ -67,9 +67,32 @@
                             <a href="{{ route('admin.dashboard') }}" class="text-sm font-medium text-gray-600 nav-link">Panel Admin</a>
                         @else
                             <a href="{{ route('booking.history') }}" class="text-sm font-medium text-gray-600 nav-link">Riwayat booking</a>
-                            <div class="w-8 h-8 bg-brand-green rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                            </div>
+                            @auth
+                                <div class="relative" x-data="{ open: false }">
+                                    <button @click="open = !open" class="flex items-center gap-2 p-1 pl-2 pr-3 rounded-full hover:bg-gray-100 border border-transparent hover:border-gray-200 transition">
+                                        <div class="w-8 h-8 rounded-full bg-[#E8F3EE] text-[#1B5E43] font-bold text-xs flex items-center justify-center">
+                                            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
+                                        </div>
+                                        <span class="text-sm font-semibold text-gray-800 hidden sm:inline">{{ Auth::user()->name }}</span>
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50">
+                                        <div class="px-4 py-2 border-b border-gray-100">
+                                            <p class="text-xs text-gray-500">Masuk sebagai</p>
+                                            <p class="text-sm font-bold text-gray-800 truncate">{{ Auth::user()->email }}</p>
+                                        </div>
+                                        <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm font-semibold text-[#1B5E43] hover:bg-gray-50">Profil saya</a>
+                                        <a href="{{ route('booking.history') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Riwayat booking</a>
+                                        @if(Auth::user()->is_admin)
+                                            <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm text-[#1B5E43] font-semibold hover:bg-emerald-50">Admin Panel</a>
+                                        @endif
+                                        <form method="POST" action="{{ route('logout') }}">
+                                            @csrf
+                                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Keluar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endauth
                         @endif
                     @else
                         <a href="{{ route('login') }}" class="text-sm font-medium text-gray-600 nav-link">Masuk</a>

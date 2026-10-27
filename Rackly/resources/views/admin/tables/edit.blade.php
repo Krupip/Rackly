@@ -41,7 +41,6 @@
                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B5E43]/20 focus:border-[#1B5E43] transition">
                     <option value="Reguler" {{ old('type', $table->type) == 'Reguler' ? 'selected' : '' }}>Reguler</option>
                     <option value="VIP" {{ old('type', $table->type) == 'VIP' ? 'selected' : '' }}>VIP</option>
-                    <option value="Pool" {{ old('type', $table->type) == 'Pool' ? 'selected' : '' }}>Pool</option>
                 </select>
                 @error('type')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>

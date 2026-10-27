@@ -72,6 +72,25 @@ test('regular user cannot access admin dashboard', function () {
     $response->assertSessionHas('error');
 });
 
+test('regular user cannot access any admin routes', function () {
+    $regularUser = User::factory()->create(['role' => 'user']);
+
+    $routes = [
+        route('tables.index'),
+        route('admin.settings'),
+        route('admin.bookings'),
+        route('admin.walkin.create'),
+        route('admin.realtime.dashboard'),
+        route('admin.realtime.bookings'),
+    ];
+
+    foreach ($routes as $url) {
+        $response = $this->actingAs($regularUser)->get($url);
+        $response->assertRedirect('/');
+        $response->assertSessionHas('error', 'Anda tidak memiliki hak akses ke halaman admin.');
+    }
+});
+
 test('admin can create a new billiard table', function () {
     $admin = User::factory()->create(['role' => 'admin']);
 

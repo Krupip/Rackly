@@ -39,27 +39,27 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Rute Admin Page
-    Route::resource('/admin/tables', AdminBilliardTableController::class);
-    Route::get('/admin/dashboard', [AdminController::class, 'index'])
-        ->middleware(['auth', IsAdmin::class])
-        ->name('admin.dashboard');
+    // Rute Khusus Admin (Dilindungi Middleware IsAdmin)
+    Route::middleware(IsAdmin::class)->group(function () {
+        Route::resource('/admin/tables', AdminBilliardTableController::class);
+        Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
 
-    // Rute Pengaturan Admin
-    Route::get('/admin/settings', [AdminSettingController::class, 'index'])->name('admin.settings');
-    Route::patch('/admin/settings', [AdminSettingController::class, 'update'])->name('admin.settings.update');
+        // Rute Pengaturan Admin
+        Route::get('/admin/settings', [AdminSettingController::class, 'index'])->name('admin.settings');
+        Route::patch('/admin/settings', [AdminSettingController::class, 'update'])->name('admin.settings.update');
 
-    // Rute Kelola Pesanan Admin
-    Route::get('/admin/bookings', [AdminController::class, 'bookings'])->name('admin.bookings');
-    Route::post('/admin/bookings/{booking}/confirm', [AdminController::class, 'confirmFullPayment'])->name('admin.bookings.confirm');
+        // Rute Kelola Pesanan Admin
+        Route::get('/admin/bookings', [AdminController::class, 'bookings'])->name('admin.bookings');
+        Route::post('/admin/bookings/{booking}/confirm', [AdminController::class, 'confirmFullPayment'])->name('admin.bookings.confirm');
 
-    // Rute Walk-in (Pesanan Langsung di Kasir)
-    Route::get('/admin/walkin/create', [AdminController::class, 'createWalkIn'])->name('admin.walkin.create');
-    Route::post('/admin/walkin', [AdminController::class, 'storeWalkIn'])->name('admin.walkin.store');
+        // Rute Walk-in (Pesanan Langsung di Kasir)
+        Route::get('/admin/walkin/create', [AdminController::class, 'createWalkIn'])->name('admin.walkin.create');
+        Route::post('/admin/walkin', [AdminController::class, 'storeWalkIn'])->name('admin.walkin.store');
 
-    // Rute Real-time Admin
-    Route::get('/admin/realtime/dashboard', [AdminController::class, 'realtimeDashboard'])->name('admin.realtime.dashboard');
-    Route::get('/admin/realtime/bookings', [AdminController::class, 'realtimeBookings'])->name('admin.realtime.bookings');
+        // Rute Real-time Admin
+        Route::get('/admin/realtime/dashboard', [AdminController::class, 'realtimeDashboard'])->name('admin.realtime.dashboard');
+        Route::get('/admin/realtime/bookings', [AdminController::class, 'realtimeBookings'])->name('admin.realtime.bookings');
+    });
 });
 
 require __DIR__ . '/auth.php';

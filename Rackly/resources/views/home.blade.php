@@ -33,6 +33,24 @@
         .nav-link:hover { color: #1a5c38; }
         .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
         .faq-answer.open { max-height: 200px; }
+        .custom-table-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-table-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 9999px;
+        }
+        .custom-table-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .custom-table-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #1a5c38;
+        }
+        .custom-table-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
     </style>
 </head>
 <body class="bg-white text-gray-900 antialiased">
@@ -327,90 +345,110 @@
                 </template>
             </div>
 
-            <!-- Grid Meja (Hanya Menampilkan Meja Tersedia saat Filter Aktif) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <template x-for="table in filteredTables" :key="table.id">
-                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-                        {{-- Table Image --}}
-                        <div class="relative h-48 overflow-hidden bg-gray-800">
-                            <img src="/images/Table photograph.png" :alt="table.table_number"
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90">
-                            
-                            <div class="absolute top-3 left-3">
-                                <template x-if="isFilterActive">
-                                    <span class="bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1.5">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                                        Tersedia di Jam Ini
-                                    </span>
-                                </template>
-                                <template x-if="!isFilterActive">
-                                    <div>
-                                        <template x-if="!table.is_occupied">
-                                            <span class="bg-green-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">● Tersedia</span>
-                                        </template>
-                                        <template x-if="table.is_occupied">
-                                            <span class="bg-amber-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">● Sedang Digunakan</span>
-                                        </template>
+            <!-- Indikator Gulir / Scroll jika meja > 6 -->
+            <div x-show="filteredTables.length > 6" class="flex items-center justify-between text-xs text-gray-500 mb-3 px-1">
+                <span class="text-[11px] sm:text-xs text-gray-500 font-medium">
+                    Menampilkan <strong class="text-gray-900" x-text="filteredTables.length"></strong> meja
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-[#1B5E43] font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">
+                    <svg class="w-3.5 h-3.5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                    Gulir ke bawah untuk meja lainnya
+                </span>
+            </div>
+
+            <!-- Scrollable Container Meja jika Meja > 6 -->
+            <div :class="filteredTables.length > 6 ? 'max-h-[540px] sm:max-h-[580px] lg:max-h-[620px] overflow-y-auto pr-1 sm:pr-2.5 pb-2 -mr-1 sm:-mr-2.5 custom-table-scrollbar' : ''">
+                <!-- Grid Meja: 2 kolom di HP, 3 kolom di Desktop -->
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                    <template x-for="table in filteredTables" :key="table.id">
+                        <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all group flex flex-col justify-between">
+                            {{-- Table Image --}}
+                            <div class="relative h-32 sm:h-48 overflow-hidden bg-gray-800">
+                                <img src="/images/Table photograph.png" :alt="table.table_number"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90">
+                                
+                                <div class="absolute top-2 left-2 sm:top-3 sm:left-3">
+                                    <template x-if="isFilterActive">
+                                        <span class="bg-emerald-600 text-white text-[9px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-sm flex items-center gap-1 sm:gap-1.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                                            <span class="hidden sm:inline">Tersedia di Jam Ini</span>
+                                            <span class="sm:hidden">Tersedia</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!isFilterActive">
+                                        <div>
+                                            <template x-if="!table.is_occupied">
+                                                <span class="bg-green-500 text-white text-[9px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-sm">● Tersedia</span>
+                                            </template>
+                                            <template x-if="table.is_occupied">
+                                                <span class="bg-amber-500 text-white text-[9px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-sm">
+                                                    <span class="hidden sm:inline">● Sedang Digunakan</span>
+                                                    <span class="sm:hidden">● Dipakai</span>
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <div class="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 bg-black/60 backdrop-blur-sm text-white text-[9px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded font-mono"
+                                     x-text="'MEJA ' + table.index_label">
+                                </div>
+                            </div>
+
+                            {{-- Table Info --}}
+                            <div class="p-3 sm:p-5 flex flex-col justify-between flex-1">
+                                <div>
+                                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 gap-0.5 sm:gap-1">
+                                        <h3 class="text-sm sm:text-lg font-bold text-gray-900 leading-tight truncate" x-text="table.table_number"></h3>
+                                        <span class="text-[9px] sm:text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium self-start sm:self-auto shrink-0" x-text="table.type"></span>
                                     </div>
+                                    <p class="text-gray-500 text-[11px] sm:text-sm mb-2 sm:mb-3 truncate">Area utama · 9 kaki · 2–4 org</p>
+                                    <p class="text-base sm:text-2xl font-black text-brand-green mb-2.5 sm:mb-4">
+                                        <span x-text="table.formatted_price"></span>
+                                        <span class="text-[10px] sm:text-sm text-gray-400 font-normal">/jam</span>
+                                    </p>
+                                </div>
+
+                                <template x-if="isAuth">
+                                    <a :href="getBookingUrl(table)"
+                                       class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition text-xs sm:text-sm truncate">
+                                        Booking meja <span x-text="table.index_label"></span> →
+                                    </a>
+                                </template>
+                                <template x-if="!isAuth">
+                                    <a href="{{ route('login') }}"
+                                       class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition text-xs sm:text-sm truncate">
+                                        Masuk untuk booking →
+                                    </a>
                                 </template>
                             </div>
-                            
-                            <div class="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded font-mono"
-                                 x-text="'MEJA ' + table.index_label">
-                            </div>
                         </div>
+                    </template>
 
-                        {{-- Table Info --}}
-                        <div class="p-5">
-                            <div class="flex justify-between items-start mb-1">
-                                <h3 class="text-lg font-bold text-gray-900" x-text="table.table_number"></h3>
-                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium" x-text="table.type"></span>
+                    <template x-if="filteredTables.length === 0">
+                        <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300 p-8">
+                            <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
-                            <p class="text-gray-500 text-sm mb-3">Area utama · 9 kaki · 2–4 pemain</p>
-                            <p class="text-2xl font-black text-brand-green mb-4">
-                                <span x-text="table.formatted_price"></span>
-                                <span class="text-sm text-gray-400 font-normal">/jam</span>
-                            </p>
-
-                            <template x-if="isAuth">
-                                <a :href="getBookingUrl(table)"
-                                   class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2.5 px-4 rounded-lg transition text-sm">
-                                    Booking meja <span x-text="table.index_label"></span> →
-                                </a>
+                            <template x-if="isFilterActive">
+                                <div>
+                                    <h4 class="text-base font-bold text-gray-900 mb-1">Tidak Ada Meja yang Tersedia</h4>
+                                    <p class="text-gray-500 text-sm max-w-md mx-auto mb-5">
+                                        Seluruh meja sudah dibooking pada jam <strong x-text="filterStartTime + ' – ' + filterEndTime + ' WIB'"></strong> tanggal <strong x-text="formatDateIndo(filterDate)"></strong>. Silakan coba pilih jam atau tanggal lain.
+                                    </p>
+                                    <button type="button" @click="resetFilter()"
+                                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-green hover-brand text-white rounded-xl text-xs font-bold transition shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        Tampilkan Semua Meja (Reset Filter)
+                                    </button>
+                                </div>
                             </template>
-                            <template x-if="!isAuth">
-                                <a href="{{ route('login') }}"
-                                   class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2.5 px-4 rounded-lg transition text-sm">
-                                    Masuk untuk booking →
-                                </a>
+                            <template x-if="!isFilterActive">
+                                <p class="text-gray-500 font-medium">Semua meja sedang tidak tersedia saat ini.</p>
                             </template>
                         </div>
-                    </div>
-                </template>
-
-                <template x-if="filteredTables.length === 0">
-                    <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300 p-8">
-                        <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <template x-if="isFilterActive">
-                            <div>
-                                <h4 class="text-base font-bold text-gray-900 mb-1">Tidak Ada Meja yang Tersedia</h4>
-                                <p class="text-gray-500 text-sm max-w-md mx-auto mb-5">
-                                    Seluruh meja sudah dibooking pada jam <strong x-text="filterStartTime + ' – ' + filterEndTime + ' WIB'"></strong> tanggal <strong x-text="formatDateIndo(filterDate)"></strong>. Silakan coba pilih jam atau tanggal lain.
-                                </p>
-                                <button type="button" @click="resetFilter()"
-                                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-green hover-brand text-white rounded-xl text-xs font-bold transition shadow-sm">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    Tampilkan Semua Meja (Reset Filter)
-                                </button>
-                            </div>
-                        </template>
-                        <template x-if="!isFilterActive">
-                            <p class="text-gray-500 font-medium">Semua meja sedang tidak tersedia saat ini.</p>
-                        </template>
-                    </div>
-                </template>
+                    </template>
+                </div>
             </div>
         </div>
     </section>

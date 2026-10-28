@@ -257,5 +257,7 @@ Status: **[Ada]** = sudah terimplementasi, **[Rencana]** = direncanakan.
 | File | Deskripsi |
 | :--- | :-------- |
 | [`README.md`](README.md) | Dokumen ini — panduan setup dan gambaran umum proyek |
+| [`HowToRun.md`](HowToRun.md) | Panduan langkah demi langkah menjalankan aplikasi dan pengujian |
+| [`checklist_mvp.md`](checklist_mvp.md) | Daftar periksa seluruh fitur MVP beserta status pengujian unit & feature test |
 | [`Rackly/.env.example`](Rackly/.env.example) | Template konfigurasi environment |
 | [`Rackly/AGENTS.md`](Rackly/AGENTS.md) | Panduan perilaku AI coding agent untuk proyek ini |

@@ -114,7 +114,7 @@
                         @endif
                     @else
                         <a href="{{ route('login') }}" class="text-sm font-medium text-gray-600 nav-link">Masuk</a>
-                        <a href="#pilih-meja" class="bg-brand-green text-white text-sm font-semibold px-4 py-2 rounded-lg hover-brand transition">Booking meja →</a>
+                        <a href="#pilih-meja" class="bg-brand-green text-white text-sm font-semibold px-4 py-2 rounded-lg hover-brand transition">Booking meja </a>
                     @endauth
                 </div>
             </div>
@@ -177,7 +177,7 @@
                     <p class="text-gray-600 leading-relaxed mb-4">
                         Dari latihan sampai sampai pertandingan serius, kami menyiapkan ruang untuk semua level pemain. Meja terawat, pencahayaan presisi, dan suasana hangat — agar kamu bisa fokus pada setiap pukulan.
                     </p>
-                    <p class="text-brand-green font-semibold text-sm">Jl. Trunojoyo No. 28, Bandung → Sejak 2021</p>
+                    <p class="text-brand-green font-semibold text-sm">Jl. Trunojoyo No. 28, Bandung  Sejak 2021</p>
                 </div>
             </div>
         </div>
@@ -412,13 +412,13 @@
                                 <template x-if="isAuth">
                                     <a :href="getBookingUrl(table)"
                                        class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition text-xs sm:text-sm truncate">
-                                        Booking meja <span x-text="table.index_label"></span> →
+                                        Booking meja <span x-text="table.index_label"></span> 
                                     </a>
                                 </template>
                                 <template x-if="!isAuth">
                                     <a href="{{ route('login') }}"
                                        class="block w-full text-center bg-brand-green hover-brand text-white font-semibold py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition text-xs sm:text-sm truncate">
-                                        Masuk untuk booking →
+                                        Masuk untuk booking 
                                     </a>
                                 </template>
                             </div>
@@ -586,7 +586,7 @@
                             <div class="text-center">
                                 <p class="font-bold text-gray-800">Rackly Billiard Club</p>
                                 <p class="text-sm text-gray-500">Jl. Trunojoyo No. 28, Bandung</p>
-                                <p class="text-xs text-brand-green mt-1 font-medium">Klik untuk buka Google Maps →</p>
+                                <p class="text-xs text-brand-green mt-1 font-medium">Klik untuk buka Google Maps </p>
                             </div>
                         </div>
                     </div>
@@ -637,7 +637,7 @@
                 <p class="text-green-200 mt-1">Apa tuntamu. Kami siapkan tempat dan permainannya.</p>
             </div>
             <a href="#pilih-meja" class="bg-white text-brand-green font-bold px-8 py-3 rounded-lg hover:bg-gray-100 transition whitespace-nowrap">
-                Pilih meja & booking →
+                Pilih meja & booking 
             </a>
         </div>
     </section>

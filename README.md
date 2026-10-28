@@ -4,7 +4,7 @@
 
 ## Tech Stack
 
-- **Backend:** Laravel 11 (PHP 8.2), MySQL
+- **Backend:** Laravel 13 (PHP 8.3+), MySQL
 - **Frontend:** Laravel Blade + Alpine.js + Tailwind CSS
 - **Payment Gateway:** Midtrans Snap (QRIS & Virtual Account)
 - **Autentikasi:** Laravel Breeze (session-based, RBAC 2 role)
@@ -19,7 +19,7 @@ Sebelum mulai, pastikan hal berikut sudah terpenuhi:
 
 | Kebutuhan              | Keterangan                                                                 |
 | :--------------------- | :------------------------------------------------------------------------- |
-| **PHP 8.2+**           | Dengan ekstensi: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`    |
+| **PHP 8.3+**           | Dengan ekstensi: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`    |
 | **Composer 2**         | [https://getcomposer.org/](https://getcomposer.org/)                       |
 | **Node.js 18+**        | Untuk build Tailwind CSS & Alpine.js via Vite                              |
 | **MySQL 8+**           | Database utama aplikasi                                                    |

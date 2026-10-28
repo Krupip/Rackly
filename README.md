@@ -1,174 +1,261 @@
-# Rackly: Sistem Reservasi Meja Biliar Online Terintegrasi Payment Gateway (DP)
+# Rackly — Sistem Reservasi Meja Biliar dengan Payment Gateway DP
 
-### Deskripsi Masalah
-Pengelolaan operasional *billiard pool/lounge* umumnya masih mengandalkan sistem *walk-in* atau reservasi manual melalui pesan instan (WhatsApp) dan buku catatan kasir. Metode konvensional ini menimbulkan sejumlah kendala:
-* **Tingginya Angka Pembatalan Sepihak (*No-Show*):** Pelanggan memesan meja namun tidak hadir tanpa konsekuensi finansial, sehingga meja menganggur dan pengelola kehilangan potensi pendapatan.
-* **Risiko *Double Booking*:** Potensi bentrok reservasi meja pada jam sibuk (*peak hours*) akibat keterlambatan admin memperbarui ketersediaan meja.
-* **Verifikasi Pembayaran Manual yang Lambat:** Proses cek mutasi bank manual untuk uang muka (*down payment*) memperlambat konfirmasi pemesanan dan rawan kesalahan pencatatan.
-* **Visibilitas Meja yang Rendah:** Pelanggan tidak dapat mengetahui ketersediaan meja secara *real-time* tanpa harus bertanya langsung ke pihak pengelola.
+**Rackly** adalah aplikasi web reservasi meja biliar yang mengintegrasikan payment gateway (DP 40%) untuk mengikat komitmen pelanggan sejak awal. Sistem ini menjembatani kebutuhan pelanggan yang ingin memesan meja secara online dengan kebutuhan pengelola untuk mengelola jadwal, meja, dan transaksi dalam satu antarmuka terpadu.
 
----
+## Tech Stack
 
-### Profil Target Pengguna
-* **Pelanggan / Pemain Biliar:** Pemain perorangan atau komunitas yang ingin memesan meja spesifik pada tanggal dan jam tertentu tanpa risiko kehabisan meja saat tiba di lokasi.
-* **Kasir / Operator Tempat Biliar:** Staf operasional yang memvalidasi kedatangan pelanggan (*check-in*), memantau status meja secara langsung, dan menyelesaikan pelunasan sisa tagihan.
-* **Pemilik / Pengelola (*Owner/Manager*):** Pihak yang membutuhkan visibilitas riwayat transaksi, laporan utilisasi meja, dan ringkasan dana DP yang masuk.
-
----
-
-### Manfaat Aplikasi
-* **Mengurangi Risiko Kerugian Akibat *No-Show*:** Penerapan kewajiban pembayaran DP secara otomatis mengikat komitmen pelanggan sebelum slot dikunci.
-* **Eliminasi Jadwal Bentrok (*Anti-Double Booking*):** Validasi otomatis di sisi *backend* memastikan tidak ada dua pemesanan yang bertabrakan pada meja dan rentang waktu yang sama.
-* **Konfirmasi Reservasi Instan & Otomatis:** Integrasi *payment gateway* (QRIS/VA) memverifikasi pembayaran secara asinkron tanpa intervensi manual staf kasir.
-* **Efisiensi Manajemen Meja:** Memudahkan kasir melacak status meja (tersedia, dipesan, sedang digunakan, atau kedaluwarsa) dalam satu antarmuka terpadu.
-
----
-
-### Daftar Fitur Inti (MVP)
-
-1. **Katalog & Ketersediaan Meja Interaktif:**
-   * Tampilan daftar meja biliar beserta jenis/tipe meja, tarif sewa per jam, dan status ketersediaan berbasis filter tanggal serta rentang jam.
-2. **Alur Pemesanan & Validasi Jadwal:**
-   * Pemilihan meja, durasi sewa, dan perhitungan estimasi total sewa serta nominal uang muka (DP).
-   * Validasi *overlap schedule* untuk mencegah konflik jadwal.
-3. **Penguncian Slot Sementara (*Temporary Hold*):**
-   * Meja berstatus terkunci sementara (*Pending Payment*) selama 10–15 menit saat transaksi tagihan dibuat agar tidak diambil pengguna lain.
-4. **Integrasi Payment Gateway Otomatis (Midtrans Sandbox / QRIS & VA):**
-   * Pembuatan token transaksi otomatis untuk menampilkan popup/antarmuka pembayaran langsung di website.
-   * Mendukung pembayaran instan via QRIS Dinamis dan Virtual Account.
-5. **Webhook Notifikasi & Transisi Status Otomatis:**
-   * *Endpoint* khusus penerima notifikasi HTTP POST dari payment gateway untuk mengubah status transaksi menjadi *Confirmed* secara instan setelah pembayaran sukses.
-   * Pembatalan otomatis (*Cancelled/Expired*) jika pembayaran melewati batas waktu, sehingga meja kembali berstatus tersedia.
-6. **Dashboard Manajemen Kasir/Admin:**
-   * Antarmuka pemantauan status pesanan masuk, pencarian kode pemesanan/QR saat pelanggan *check-in*, dan pencatatan pelunasan sisa sewa di kasir.
-
----
-
-### Tech Stack & Specifications
-- **Frontend:** Laravel Blade + Tailwind CSS + Alpine.js
-- **Backend:** Laravel 11 (PHP)
-- **Database:** MySQL
+- **Backend:** Laravel 11 (PHP 8.2), MySQL
+- **Frontend:** Laravel Blade + Alpine.js + Tailwind CSS
+- **Payment Gateway:** Midtrans Snap (QRIS & Virtual Account)
+- **Autentikasi:** Laravel Breeze (session-based, RBAC 2 role)
 - **ORM:** Eloquent ORM
-- **Payment Gateway:** Midtrans (Snap.js & Notification Webhook)
-- **Local Tunneling:** Ngrok (for Webhook testing)
-- **Environment:** Use `.env.example` for database configuration and Midtrans API Keys (Merchant ID, Client Key, Server Key).
-
-### Main Entities
-
-1. **User**
-   * Id
-   * Name
-   * Email
-   * Password
-   * Role (Admin/Student)
-   * CreatedAt
-
-2. **BilliardTable / Venue**
-   * Id
-   * Name
-   * Status (Available/Maintenance)
-   * PricePerHour
-   * CreatedAt
-
-3. **Booking**
-   * Id
-   * UserId
-   * TableId
-   * StartTime
-   * EndTime
-   * TotalPrice
-   * DownPayment (30%)
-   * Status (`pending`, `paid`, `cancelled`)
-   * CreatedAt
-
-4. **Payment**
-   * Id
-   * BookingId
-   * MidtransOrderId
-   * GrossAmount
-   * PaymentType
-   * TransactionStatus (`pending`, `settlement`, `expire`, `cancel`)
-   * CreatedAt
-   * UpdatedAt
-
-### Backend Features
-
-1. **CRUD Venues & Equipment**
-   * Create, list, detail, update, delete sports venues/tables (Admin only).
-
-2. **Smart Booking System**
-   * Validate booking schedule (Operational hours: 08:00 - 23:00).
-   * Prevent overlapping schedules for the same table.
-   * Allow sequential (estafet) bookings without time gaps.
-   * Automatically calculate total price based on duration.
-   * Automatically calculate 30% Down Payment (DP).
-
-3. **Midtrans Payment Integration**
-   * Generate Snap Token for seamless frontend checkout pop-up.
-   * Generate unique `OrderId` for every transaction.
-
-4. **Automated Webhook Synchronization**
-   * Endpoint to receive HTTP notifications from Midtrans.
-   * Secure the endpoint by disabling CSRF specifically for `/webhook/midtrans`.
-   * Validate incoming requests using `Signature Key` (SHA-512 hash of OrderId, StatusCode, GrossAmount, and ServerKey).
-   * Automatically update `transaction_status` in the `payments` table.
-   * Automatically sync and update the `status` in the `bookings` table (`pending` -> `paid` or `cancelled`).
-
-### Frontend Pages
-
-1. **Home / Venue Dashboard**
-   * List of available billiard tables and sports equipment.
-   * Show pricing and basic information.
-
-2. **Booking Page**
-   * Form to select date, start time, and end time.
-   * Real-time calculation display for Total Price and 30% DP.
-   * Show error messages if the schedule is already booked or invalid.
-
-3. **Checkout & Payment**
-   * Order summary details.
-   * Button `Bayar Sekarang` triggering Midtrans Snap pop-up.
-   * Auto-redirect to the user dashboard upon successful payment simulation.
-
-4. **User Dashboard / Transaction History**
-   * Table showing user's booking history.
-   * Show current payment status (Pending, Paid, Cancelled).
-
-### Required API & Web Routes
-
-- `GET /` (Landing Page)
-- `GET /dashboard` (User Dashboard)
-- `GET /bookings/create` (Show Booking Form)
-- `POST /bookings` (Store Booking & Generate Invoice)
-- `GET /checkout/{Id}` (Checkout Page)
-- `POST /webhook/midtrans` (Midtrans Notification Handler)
-
-### Project Structure
-
-- Built as a monolithic Laravel application.
-- Structure:
-
-```text
-Rackly/
-  app/
-    Http/
-      Controllers/ (BookingController, etc.)
-    Models/ (Booking, Payment, BilliardTable, User)
-  bootstrap/
-    app.php (CSRF exclusions)
-  config/
-    midtrans.php
-  database/
-    migrations/
-  resources/
-    views/ (Blade templates)
-  routes/
-    web.php (Application & Webhook routes)
+- **Testing:** Pest PHP
 
 ---
 
-### Kriteria Aplikasi Dinyatakan Berhasil
-* Sistem berhasil menolak reservasi baru jika jam yang dipilih beririsan (*overlap*) dengan reservasi yang sudah berstatus *Confirmed* atau *Pending Payment* aktif.
-* Token transaksi dan pop-up pembayaran berhasil dimunculkan dengan nominal DP yang tepat.
-* Webhook dari payment gateway berhasil memverifikasi *signature/hash key* dan memperbarui status pesanan di basis data dari `PENDING_PAYMENT` menjadi `CONFIRMED` dalam hitungan detik setelah transaksi sukses di simulator.
-* Sistem secara otomatis mengembalikan status meja menjadi tersedia jika waktu tunggu pembayaran (15 menit) habis tanpa adanya konfirmasi pembayaran dari gateway.
+## Prerequisites
+
+Sebelum mulai, pastikan hal berikut sudah terpenuhi:
+
+| Kebutuhan              | Keterangan                                                                 |
+| :--------------------- | :------------------------------------------------------------------------- |
+| **PHP 8.2+**           | Dengan ekstensi: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`    |
+| **Composer 2**         | [https://getcomposer.org/](https://getcomposer.org/)                       |
+| **Node.js 18+**        | Untuk build Tailwind CSS & Alpine.js via Vite                              |
+| **MySQL 8+**           | Database utama aplikasi                                                    |
+| **Ngrok / tunnel**     | Diperlukan untuk menerima webhook Midtrans saat development lokal          |
+| **Akun Midtrans**      | Sandbox mode — daftar gratis di [https://midtrans.com](https://midtrans.com) |
+
+> **Catatan:** seluruh perintah di panduan ini dijalankan di **PowerShell** atau **Git Bash** (Windows), atau terminal biasa (Linux/macOS).
+
+---
+
+## Quick Start (Local)
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/Project-RPL.git
+cd Project-RPL/Rackly
+```
+
+### 2. Install Dependencies
+
+```bash
+composer install
+npm install
+```
+
+### 3. Buat File `.env`
+
+```bash
+# Linux / macOS / Git Bash
+cp .env.example .env
+
+# Windows PowerShell
+Copy-Item .env.example .env
+```
+
+Lalu buka `.env` dan isi nilainya (lihat bagian [Konfigurasi `.env`](#konfigurasi-env) di bawah).
+
+### 4. Generate Application Key
+
+```bash
+php artisan key:generate
+```
+
+### 5. Buat Database & Jalankan Migrasi
+
+Buat database kosong bernama `cue_reserve` di MySQL, lalu:
+
+```bash
+php artisan migrate --seed
+```
+
+Perintah `--seed` otomatis membuat akun admin dan data awal meja.
+
+### 6. Build Asset Frontend
+
+```bash
+npm run build
+```
+
+Atau untuk mode development dengan hot-reload:
+
+```bash
+npm run dev
+```
+
+### 7. Jalankan Aplikasi
+
+```bash
+php artisan serve
+```
+
+Aplikasi berjalan di `http://localhost:8000`.
+
+### 8. (Opsional) Jalankan Tunnel untuk Webhook Midtrans
+
+Midtrans membutuhkan URL publik untuk mengirim notifikasi pembayaran. Gunakan Ngrok:
+
+```bash
+ngrok http 8000
+```
+
+Salin URL HTTPS yang diberikan Ngrok (contoh: `https://xxxx.ngrok.io`), lalu set di dashboard Midtrans sebagai **Payment Notification URL**:
+
+```
+https://xxxx.ngrok.io/webhook/midtrans
+```
+
+---
+
+## Konfigurasi `.env`
+
+```dotenv
+APP_NAME=Rackly
+APP_ENV=local
+APP_KEY=           # diisi otomatis oleh php artisan key:generate
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+APP_TIMEZONE=Asia/Jakarta
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=cue_reserve
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Midtrans — ambil dari https://dashboard.midtrans.com (sandbox)
+MIDTRANS_SERVER_KEY=SB-Mid-server-XXXXXXXXXXXXXXXXXXXXXXXX
+MIDTRANS_CLIENT_KEY=SB-Mid-client-XXXXXXXXXXXXXXXXXXXXXXXX
+MIDTRANS_MERCHANT_ID=GXXXXXXXX
+MIDTRANS_IS_PRODUCTION=false
+MIDTRANS_IS_SANITIZED=true
+MIDTRANS_IS_3DS=true
+```
+
+> **Penting:** jangan commit file `.env` ke repository. File `.env` sudah ada di `.gitignore`.
+
+---
+
+## Akun Demo
+
+Setelah `php artisan migrate --seed`, akun berikut tersedia — password semuanya `password`:
+
+| Email                    | Role    | Keterangan                          |
+| :----------------------- | :------ | :---------------------------------- |
+| `admin@rackly.com`       | `admin` | Akses penuh ke dashboard admin      |
+| `user@example.com`       | `user`  | Akun pelanggan untuk booking online |
+
+> Gunakan akun `admin` untuk mengelola meja, melihat semua booking, dan konfigurasi pengaturan aplikasi.
+
+---
+
+## Menjalankan Test
+
+```bash
+php artisan test
+```
+
+**Yang diharapkan saat suite lulus:**
+
+```
+PASS  Tests\Feature\...
+...
+
+Tests:    80 passed
+```
+
+> Kegagalan ditandai dengan `FAIL` dan exit code bukan nol.
+
+---
+
+## Troubleshooting
+
+| Masalah                                        | Penyebab                                          | Solusi                                                                  |
+| :--------------------------------------------- | :------------------------------------------------ | :---------------------------------------------------------------------- |
+| `No application encryption key has been specified` | `APP_KEY` kosong                              | Jalankan `php artisan key:generate`                                     |
+| `SQLSTATE[HY000]: No such host`                | Konfigurasi DB salah                              | Periksa `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` di `.env`    |
+| `Class "Midtrans\..." not found`               | Dependency belum terinstall                       | Jalankan `composer install`                                             |
+| Webhook Midtrans tidak diterima                | URL tidak publik / tunnel tidak aktif             | Pastikan Ngrok aktif dan URL sudah di-set di dashboard Midtrans         |
+| Vite error / asset tidak muncul                | Node modules belum terinstall atau belum di-build | Jalankan `npm install && npm run build`                                 |
+| `Timezone` tidak sesuai                        | `APP_TIMEZONE` belum di-set                       | Pastikan `APP_TIMEZONE=Asia/Jakarta` ada di `.env`                      |
+
+---
+
+## Struktur Project
+
+```
+Project-RPL/
+├── Rackly/                      # Aplikasi Laravel utama
+│   ├── app/
+│   │   ├── Http/
+│   │   │   ├── Controllers/     # BookingController, AdminController, dst.
+│   │   │   └── Middleware/      # IsAdmin, dll.
+│   │   └── Models/              # User, BilliardTable, Booking, Payment, Setting
+│   ├── config/
+│   │   ├── app.php              # Timezone Asia/Jakarta
+│   │   └── midtrans.php         # Konfigurasi Midtrans
+│   ├── database/
+│   │   ├── migrations/
+│   │   └── seeders/
+│   ├── resources/
+│   │   └── views/               # Blade templates (booking, admin, auth, dst.)
+│   ├── routes/
+│   │   ├── web.php              # Route utama & webhook
+│   │   └── auth.php             # Route autentikasi
+│   ├── tests/
+│   │   └── Feature/             # 80 test Pest PHP
+│   ├── .env.example
+│   └── README.md
+└── README.md                    # Dokumen ini
+```
+
+---
+
+## Fitur Inti
+
+Status: **[Ada]** = sudah terimplementasi, **[Rencana]** = direncanakan.
+
+1. **[Ada] Katalog Meja Interaktif** — tampilan daftar meja, tipe, harga/jam, dan status ketersediaan
+2. **[Ada] Pemesanan Online dengan Validasi Jadwal** — cegah konflik (*overlap*) dan pemesanan di tanggal/jam lampau
+3. **[Ada] Pembayaran DP via Midtrans** — Snap.js popup (QRIS & Virtual Account), 40% dari total harga
+4. **[Ada] Webhook Otomatis** — sinkronisasi status booking dari Midtrans secara real-time
+5. **[Ada] Walk-in Booking (Admin)** — kasir bisa input booking langsung tanpa payment gateway
+6. **[Ada] Riwayat Booking & Pembatalan** — pelanggan bisa melihat histori dan membatalkan booking
+7. **[Ada] Dashboard Admin** — manajemen meja, semua booking, dan pengaturan aplikasi
+8. **[Ada] RBAC 2 Role** — `user` (pelanggan) dan `admin` (pengelola), dilindungi middleware `IsAdmin`
+9. **[Ada] Custom Popup Modal** — tidak menggunakan `alert()` / `confirm()` bawaan browser
+10. **[Rencana]** Notifikasi email konfirmasi booking
+
+---
+
+## Keamanan
+
+- Session-based authentication via Laravel Breeze
+- Middleware `IsAdmin` melindungi seluruh rute `/admin/*`
+- Webhook Midtrans divalidasi dengan *signature key* (SHA-512)
+- CSRF dinonaktifkan hanya untuk endpoint `/webhook/midtrans`
+- Password di-hash dengan `bcrypt`
+- `.env` tidak di-commit (ada di `.gitignore`), `.env.example` hanya template
+
+---
+
+## Masalah yang Diselesaikan
+
+1. **No-Show & Kerugian Pendapatan** — kewajiban DP 40% mengikat komitmen pelanggan secara finansial sejak awal
+2. **Risiko Double Booking** — validasi otomatis di backend mencegah konflik jadwal pada meja yang sama
+3. **Verifikasi Pembayaran Manual** — integrasi Midtrans + webhook mengonfirmasi pembayaran secara otomatis tanpa intervensi staf
+4. **Visibilitas Meja Rendah** — ketersediaan meja ditampilkan secara real-time berdasarkan jadwal yang sudah dibooking
+
+---
+
+## Dokumen Lengkap
+
+| File | Deskripsi |
+| :--- | :-------- |
+| [`README.md`](README.md) | Dokumen ini — panduan setup dan gambaran umum proyek |
+| [`Rackly/.env.example`](Rackly/.env.example) | Template konfigurasi environment |
+| [`Rackly/AGENTS.md`](Rackly/AGENTS.md) | Panduan perilaku AI coding agent untuk proyek ini |

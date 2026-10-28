@@ -261,3 +261,6 @@ Status: **[Ada]** = sudah terimplementasi, **[Rencana]** = direncanakan.
 | [`checklist_mvp.md`](checklist_mvp.md) | Daftar periksa seluruh fitur MVP beserta status pengujian unit & feature test |
 | [`Rackly/.env.example`](Rackly/.env.example) | Template konfigurasi environment |
 | [`Rackly/AGENTS.md`](Rackly/AGENTS.md) | Panduan perilaku AI coding agent untuk proyek ini |
+
+## Video Demonstrasi
+Link Google Drive: https://drive.google.com/file/d/1menb4NaDfTpGp8S3TrfDnkEJnAf76MOB/view?usp=sharing

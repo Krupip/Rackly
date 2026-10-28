@@ -415,7 +415,7 @@
                     <div class="space-y-2.5 pt-1">
                         <button type="submit" form="booking-form" :disabled="!isValidTime"
                             class="w-full bg-[#1B5E43] hover:bg-[#154b35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
-                            Lanjut ke pembayaran &rarr;
+                            Lanjut ke pembayaran
                         </button>
 
                         <p class="text-[11px] text-gray-400 text-center leading-tight">

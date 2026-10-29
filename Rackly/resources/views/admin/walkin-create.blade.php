@@ -20,7 +20,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.walkin.store') }}" method="POST" id="walkin-form">
+    <form action="{{ route('admin.walkin.store') }}" method="POST" id="walkin-form" @submit="isSubmitting = true">
         @csrf
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -378,10 +378,14 @@
 
                     <!-- Submit & Cancel Buttons -->
                     <div class="space-y-2 pt-2">
-                        <button type="submit" :disabled="!isFormValid"
-                                class="w-full bg-[#1B5E43] hover:bg-[#154b35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Simpan pesanan walk-in
+                        <button type="submit" :disabled="!isFormValid || isSubmitting"
+                                class="w-full bg-[#1B5E43] hover:bg-[#154b35] disabled:bg-gray-300 disabled:opacity-75 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
+                            <svg x-show="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <svg x-show="!isSubmitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span x-text="isSubmitting ? 'Menyimpan pesanan...' : 'Simpan pesanan walk-in'"></span>
                         </button>
 
                         <a href="{{ route('admin.bookings') }}" class="block w-full py-2.5 text-center text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition">
@@ -423,6 +427,7 @@
             tableAlert: '',
             existingBookings: @json($existingBookings ?? []),
             tablesData: @json($tables ?? []),
+            isSubmitting: false,
 
             init() {
                 this.updateTableSelection();

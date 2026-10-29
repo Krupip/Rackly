@@ -365,37 +365,60 @@
             }
         }, 1000);
 
-        // Midtrans Snap Modal Trigger
-        document.getElementById('pay-button').onclick = function () {
-            snap.pay('{{ $snapToken }}', {
-                onSuccess: function (result) {
-                    clearInterval(timer);
-                    window.location.href = "{{ route('booking.history') }}";
-                },
-                onPending: function (result) {
-                    showCustomPopup({
-                        title: 'Menunggu Penyelesaian',
-                        message: 'Menunggu penyelesaian pembayaran Anda. Silakan selesaikan pembayaran sesuai instruksi.',
-                        type: 'info',
-                        btnText: 'Ke Riwayat Booking',
-                        onConfirm: function () {
-                            window.location.href = "{{ route('booking.history') }}";
-                        }
-                    });
-                },
-                onError: function (result) {
-                    showCustomPopup({
-                        title: 'Pembayaran Gagal',
-                        message: 'Pembayaran gagal diproses. Silakan coba lagi.',
-                        type: 'error',
-                        btnText: 'Tutup'
-                    });
-                },
-                onClose: function () {
-                    // Modal ditutup
-                }
-            });
-        };
+        // Midtrans Snap Modal Trigger dengan status disabled saat proses
+        const payBtn = document.getElementById('pay-button');
+        if (payBtn) {
+            payBtn.onclick = function () {
+                payBtn.disabled = true;
+                payBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                const originalHtml = payBtn.innerHTML;
+                payBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white inline" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Membuka Midtrans...</span>
+                `;
+
+                snap.pay('{{ $snapToken }}', {
+                    onSuccess: function (result) {
+                        clearInterval(timer);
+                        payBtn.innerHTML = `<span>Pembayaran Berhasil! Mengalihkan...</span>`;
+                        window.location.href = "{{ route('booking.history') }}";
+                    },
+                    onPending: function (result) {
+                        payBtn.disabled = false;
+                        payBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                        payBtn.innerHTML = originalHtml;
+                        showCustomPopup({
+                            title: 'Menunggu Penyelesaian',
+                            message: 'Menunggu penyelesaian pembayaran Anda. Silakan selesaikan pembayaran sesuai instruksi.',
+                            type: 'info',
+                            btnText: 'Ke Riwayat Booking',
+                            onConfirm: function () {
+                                window.location.href = "{{ route('booking.history') }}";
+                            }
+                        });
+                    },
+                    onError: function (result) {
+                        payBtn.disabled = false;
+                        payBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                        payBtn.innerHTML = originalHtml;
+                        showCustomPopup({
+                            title: 'Pembayaran Gagal',
+                            message: 'Pembayaran gagal diproses. Silakan coba lagi.',
+                            type: 'error',
+                            btnText: 'Tutup'
+                        });
+                    },
+                    onClose: function () {
+                        payBtn.disabled = false;
+                        payBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                        payBtn.innerHTML = originalHtml;
+                    }
+                });
+            };
+        }
     </script>
 </body>
 </html>

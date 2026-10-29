@@ -15,14 +15,17 @@
         'is_active' => (int) $tables->first()->is_active,
         'update_url' => route('tables.update', $tables->first()->id)
     ]) : 'null' }},
+    isUpdating: false,
     deleteModal: {
         show: false,
+        submitting: false,
         tableNumber: '',
         actionUrl: ''
     },
     confirmDelete(number, url) {
         this.deleteModal = {
             show: true,
+            submitting: false,
             tableNumber: number,
             actionUrl: url
         };
@@ -179,7 +182,7 @@
                         <p class="text-xs text-gray-400 mt-0.5" x-text="'Meja ' + selectedTable.table_number + ' · ' + selectedTable.type"></p>
                     </div>
 
-                    <form :action="selectedTable.update_url" method="POST" class="space-y-4">
+                    <form :action="selectedTable.update_url" method="POST" class="space-y-4" @submit="isUpdating = true">
                         @csrf
                         @method('PUT')
 
@@ -214,9 +217,13 @@
                         </div>
 
                         <div class="pt-3 space-y-2">
-                            <button type="submit" class="w-full py-3 px-4 bg-[#1B5E43] hover:bg-[#154b35] text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                Simpan perubahan
+                            <button type="submit" :disabled="isUpdating" class="w-full py-3 px-4 bg-[#1B5E43] hover:bg-[#154b35] disabled:bg-gray-400 disabled:opacity-75 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2">
+                                <svg x-show="isUpdating" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <svg x-show="!isUpdating" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span x-text="isUpdating ? 'Menyimpan...' : 'Simpan perubahan'"></span>
                             </button>
                         </div>
                     </form>
@@ -256,11 +263,15 @@
                 <button type="button" @click="deleteModal.show = false" class="px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-semibold transition cursor-pointer">
                     Batal
                 </button>
-                <form :action="deleteModal.actionUrl" method="POST" class="inline">
+                <form :action="deleteModal.actionUrl" method="POST" class="inline" @submit="deleteModal.submitting = true">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-sm">
-                        Ya, Hapus Meja
+                    <button type="submit" :disabled="deleteModal.submitting" class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 disabled:opacity-75 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-sm flex items-center gap-1.5">
+                        <svg x-show="deleteModal.submitting" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span x-text="deleteModal.submitting ? 'Menghapus...' : 'Ya, Hapus Meja'"></span>
                     </button>
                 </form>
             </div>

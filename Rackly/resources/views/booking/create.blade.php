@@ -177,7 +177,7 @@
                         <p class="text-xs text-gray-400 mt-0.5">Semua jadwal menggunakan Waktu Indonesia Barat (WIB).</p>
                     </div>
 
-                    <form action="{{ route('bookings.store') }}" method="POST" id="booking-form">
+                    <form action="{{ route('bookings.store') }}" method="POST" id="booking-form" @submit="isSubmitting = true">
                         @csrf
                         <input type="hidden" name="table_id" value="{{ $billiardTable->id }}">
                         <input type="hidden" name="booking_date" x-model="selectedDate">
@@ -413,9 +413,13 @@
 
                     <!-- Submit Button -->
                     <div class="space-y-2.5 pt-1">
-                        <button type="submit" form="booking-form" :disabled="!isValidTime"
-                            class="w-full bg-[#1B5E43] hover:bg-[#154b35] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
-                            Lanjut ke pembayaran
+                        <button type="submit" form="booking-form" :disabled="!isValidTime || isSubmitting"
+                            class="w-full bg-[#1B5E43] hover:bg-[#154b35] disabled:bg-gray-300 disabled:opacity-75 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
+                            <svg x-show="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" style="display: none;">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span x-text="isSubmitting ? 'Memproses pesanan...' : 'Lanjut ke pembayaran →'"></span>
                         </button>
 
                         <p class="text-[11px] text-gray-400 text-center leading-tight">
@@ -467,6 +471,7 @@
                 calMonth: new Date().getMonth(), // 0-11
                 startTime: '{{ old('start_time', request('start', '')) }}',
                 endTime: '{{ old('end_time', request('end', '')) }}',
+                isSubmitting: false,
 
                 init() {
                     const presetDate = '{{ old('booking_date', request('date', '')) }}';

@@ -10,8 +10,8 @@ Dokumen ini memuat daftar periksa (*checklist*) seluruh fitur inti Minimum Viabl
 - **Cakupan Fitur:** 100% Selesai Diimplementasikan
 - **Hasil Pengujian Otomatis (Automated Tests):**
   - **Status:** **`PASSED`** (Semua Pengujian Lolos)
-  - **Total Test Cases:** **80 Tests**
-  - **Total Assertions:** **233 Assertions**
+  - **Total Test Cases:** **86 Tests**
+  - **Total Assertions:** **268 Assertions**
   - **Kegagalan (Failed / Error):** **0**
 - **Framework Pengujian:** Pest PHP (v4.7) / PHPUnit 12 pada Laravel 13
 
@@ -97,9 +97,22 @@ Dokumen ini memuat daftar periksa (*checklist*) seluruh fitur inti Minimum Viabl
 
 ---
 
+### I. Keandalan & Idempotensi Sistem (Idempotency)
+| No | Fitur / Komponen | Cakupan & Kriteria Penerimaan | Status Implementasi | Status Pengujian | Kasus Uji / File Test Terkait |
+| :---: | :--- | :--- | :---: | :---: | :--- |
+| 9.1 | **Idempotensi Webhook Notifikasi Pembayaran** | Webhook `settlement` yang dikirim berulang kali oleh Midtrans menghasilkan status `dp_lunas` yang sama tanpa error atau duplikasi dana. | Selesai | **PASSED** | `IdempotencyTest` (`midtrans_webhook_settlement_is_idempotent...`) |
+| 9.2 | **Proteksi Regresi Status Transaksi (Monotonicity)** | Webhook `settlement` yang terlambat tidak akan menurunkan status booking yang sudah dilunasi kasir (`lunas`) kembali menjadi `dp_lunas`. | Selesai | **PASSED** | `IdempotencyTest` (`...does_not_downgrade_an_already_lunas_booking`) |
+| 9.3 | **Proteksi Webhook Kedaluwarsa Terlambat** | Webhook `expire`/`cancel` yang terlambat tiba tidak akan membatalkan pesanan yang sudah berstatus lunas atau DP lunas. | Selesai | **PASSED** | `IdempotencyTest` (`...does_not_cancel_an_already_paid_booking`) |
+| 9.4 | **Idempotensi Konfirmasi Pelunasan Admin** | Penekanan tombol konfirmasi pelunasan berkali-kali oleh kasir tetap menghasilkan respon sukses dan pesanan tetap berstatus `lunas` tanpa error. | Selesai | **PASSED** | `IdempotencyTest` (`admin_confirmFullPayment_is_idempotent...`) |
+| 9.5 | **Idempotensi Pembatalan Booking Mandiri** | Penekanan tombol pembatalan berkali-kali oleh pelanggan tetap memberikan respon sukses tanpa melempar error `booking tidak valid`. | Selesai | **PASSED** | `IdempotencyTest` (`user_cancel_booking_is_idempotent...`) |
+| 9.6 | **Idempotensi Pembuatan Pesanan Walk-In** | Pengiriman form walk-in yang tidak sengaja tertekan dobel oleh kasir tidak membuat duplikat pemesanan di database. | Selesai | **PASSED** | `IdempotencyTest` (`admin_storeWalkIn_is_idempotent...`) |
+| 9.7 | **Idempotensi Checkout & Atomic DB Transaction** | Form pemesanan online dibungkus transaksi database atomik dan dapat mengarahkan kembali ke checkout yang sama jika user mengulang request pending. | Selesai | **PASSED** | `BookingFlowTest`, `BookingConflictTest` |
+
+---
+
 ## 2. Rincian Eksekusi Test Suite Otomatis
 
-Berikut rincian distribusi 80 test cases yang telah dijalankan dan lulus 100%:
+Berikut rincian distribusi 86 test cases yang telah dijalankan dan lulus 100%:
 
 ```
 ================================================================================
@@ -124,12 +137,13 @@ Test Suite Summary: Pest PHP / PHPUnit
   - BookingConflictTest           : 8 passed
   - BookingFlowTest               : 7 passed
   - ExampleTest                   : 2 passed
+  - IdempotencyTest               : 6 passed
   - PaymentConfirmationTest       : 5 passed
   - ProfileTest                   : 5 passed
   - WalkInBookingTest             : 5 passed
-  Subtotal Feature Tests          : 56 passed
+  Subtotal Feature Tests          : 62 passed
 --------------------------------------------------------------------------------
-TOTAL TEST CASES                  : 80 PASSED (233 assertions)
+TOTAL TEST CASES                  : 86 PASSED (268 assertions)
 STATUS AKHIR                      : PASSED
 ================================================================================
 ```

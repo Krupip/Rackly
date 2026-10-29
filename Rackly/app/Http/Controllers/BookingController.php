@@ -86,25 +86,32 @@ class BookingController extends Controller
             return back()->with('error', 'Maaf, waktu jadwal yang dipilih sudah lewat. Silakan pilih waktu yang akan datang.')->withInput();
         }
 
-        // 2. Cek Jadwal Bentrok (Mencegah Double Booking / Overlapping)
-        $isConflict = \App\Models\Booking::where('billiard_table_id', $table->id)
-            ->whereIn('status', ['pending', 'dp_lunas', 'lunas'])
-            ->where(function ($query) use ($start, $end) {
-                // Logika Estafet: Izinkan booking jika jam mulai = jam selesai orang lain
-                $query->where('start_time', '<', $end)
-                      ->where('end_time', '>', $start);
-            })->exists();
-
-        if ($isConflict) {
-            return back()->with('error', 'Maaf, jadwal ini sudah dipesan. Silakan pilih jam lain.')->withInput();
-        }
-
-        // 3. Hitung Durasi, Harga, dan DP sesuai setting
+        // Ambil konfigurasi DP
         $dpType = Setting::get('dp_type', 'percentage');
         $dpPercentage = (int) Setting::get('dp_percentage', 30);
         $dpNominal = (int) Setting::get('dp_nominal', 50000);
         $expiryMinutes = (int) Setting::get('dp_expiry_minutes', 15);
 
+        // Idempotent Request Handling:
+        // Jika user yang sama sudah mengirim request untuk meja dan jadwal yang sama persis
+        // dan masih berstatus pending (misal karena double-click tombol form atau network retry),
+        // gunakan booking yang sudah dibuat sebelumnya alih-alih membuat duplikat atau melempar error bentrok.
+        $existingBooking = Booking::where('user_id', auth()->id())
+            ->where('billiard_table_id', $table->id)
+            ->where('start_time', $start)
+            ->where('end_time', $end)
+            ->where('status', 'pending')
+            ->with('payment')
+            ->first();
+
+        if ($existingBooking && $existingBooking->payment && $existingBooking->payment->snap_token) {
+            $booking = $existingBooking;
+            $payment = $existingBooking->payment;
+            $snapToken = $payment->snap_token;
+            return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpType', 'dpPercentage', 'dpNominal'));
+        }
+
+        // 2. Cek Jadwal Bentrok & Hitung Biaya
         $durationHours = $start->diffInMinutes($end) / 60;
         $totalPrice = $durationHours * $table->price_per_hour;
 
@@ -114,16 +121,35 @@ class BookingController extends Controller
             $dpAmount = $totalPrice * ($dpPercentage / 100);
         }
 
-        // 4. Simpan ke database (Tabel Bookings)
-        $booking = \App\Models\Booking::create([
-            'user_id' => auth()->id(),
-            'billiard_table_id' => $table->id,
-            'start_time' => $start,
-            'end_time' => $end,
-            'total_price' => $totalPrice,
-            'dp_amount' => $dpAmount,
-            'status' => 'pending',
-        ]);
+        // Simpan ke database dengan transaksi atomik untuk mencegah race condition
+        $booking = \Illuminate\Support\Facades\DB::transaction(function () use ($table, $start, $end, $totalPrice, $dpAmount) {
+            $isConflict = Booking::where('billiard_table_id', $table->id)
+                ->whereIn('status', ['pending', 'dp_lunas', 'lunas'])
+                ->where(function ($query) use ($start, $end) {
+                    $query->where('start_time', '<', $end)
+                          ->where('end_time', '>', $start);
+                })
+                ->lockForUpdate()
+                ->exists();
+
+            if ($isConflict) {
+                return null;
+            }
+
+            return Booking::create([
+                'user_id' => auth()->id(),
+                'billiard_table_id' => $table->id,
+                'start_time' => $start,
+                'end_time' => $end,
+                'total_price' => $totalPrice,
+                'dp_amount' => $dpAmount,
+                'status' => 'pending',
+            ]);
+        });
+
+        if (!$booking) {
+            return back()->with('error', 'Maaf, jadwal ini sudah dipesan. Silakan pilih jam lain.')->withInput();
+        }
 
         // 5. Konfigurasi Midtrans
         \Midtrans\Config::$serverKey = env('MIDTRANS_SERVER_KEY');
@@ -187,10 +213,21 @@ class BookingController extends Controller
         return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpType', 'dpPercentage', 'dpNominal'));
     }
 
-    // Membatalkan pesanan
+    // Membatalkan pesanan (Idempotent)
     public function cancel(Booking $booking)
     {
-        if ($booking->user_id !== auth()->id() || $booking->status !== 'pending') {
+        // Pastikan hanya pemilik yang dapat membatalkan
+        if ($booking->user_id !== auth()->id()) {
+            return redirect()->route('booking.history')->with('error', 'Booking tidak valid atau bukan milik Anda.');
+        }
+
+        // Idempotent: jika sudah dibatalkan sebelumnya, kembalikan respon sukses yang konsisten
+        if ($booking->status === 'cancelled') {
+            return redirect()->route('booking.history')->with('success', 'Booking berhasil dibatalkan.');
+        }
+
+        // Jika status bukan pending (misal sudah dp_lunas atau lunas), tolak pembatalan
+        if ($booking->status !== 'pending') {
             return redirect()->route('booking.history')->with('error', 'Booking tidak valid atau sudah dibayar.');
         }
 
@@ -217,19 +254,36 @@ class BookingController extends Controller
 
             if ($payment) {
                 $transactionStatus = $request->transaction_status;
+                $booking = $payment->booking;
 
+                // Idempotent Webhook Processing:
                 // Jika status sukses (settlement/capture) → DP lunas
                 if ($transactionStatus == 'settlement' || $transactionStatus == 'capture') {
-                    $payment->update(['transaction_status' => 'paid']);
-                    $payment->booking->update([
-                        'status'      => 'dp_lunas',
-                        'paid_amount' => $payment->booking->dp_amount,
-                    ]);
+                    if ($payment->transaction_status !== 'paid') {
+                        $payment->update(['transaction_status' => 'paid']);
+                    }
+
+                    // Hanya ubah status booking jika belum dp_lunas dan belum lunas
+                    // Ini mencegah regresi status jika pesanan telah dilunasi di kasir (lunas)
+                    if ($booking && !in_array($booking->status, ['dp_lunas', 'lunas'])) {
+                        $booking->update([
+                            'status'      => 'dp_lunas',
+                            'paid_amount' => $booking->dp_amount,
+                        ]);
+                    }
                 }
-                // Jika dibatalkan atau kadaluarsa
-                else if ($transactionStatus == 'cancel' || $transactionStatus == 'expire' || $transactionStatus == 'deny') {
-                    $payment->update(['transaction_status' => 'failed']);
-                    $payment->booking->update(['status' => 'cancelled']);
+                // Jika dibatalkan atau kadaluarsa (cancel, expire, deny)
+                else if (in_array($transactionStatus, ['cancel', 'expire', 'deny'])) {
+                    // Jangan batalkan pesanan jika sudah dibayar / lunas
+                    // (Mencegah webhook kadaluarsa yang datang terlambat membatalkan pesanan yang sudah dibayar)
+                    if ($booking && !in_array($booking->status, ['dp_lunas', 'lunas'])) {
+                        if ($payment->transaction_status !== 'failed') {
+                            $payment->update(['transaction_status' => 'failed']);
+                        }
+                        if ($booking->status !== 'cancelled') {
+                            $booking->update(['status' => 'cancelled']);
+                        }
+                    }
                 }
             }
         }

@@ -165,7 +165,7 @@ php artisan test
 PASS  Tests\Feature\...
 ...
 
-Tests:    80 passed
+Tests:    86 passed
 ```
 
 > Kegagalan ditandai dengan `FAIL` dan exit code bukan nol.
@@ -207,7 +207,7 @@ Project-RPL/
 │   │   ├── web.php              # Route utama & webhook
 │   │   └── auth.php             # Route autentikasi
 │   ├── tests/
-│   │   └── Feature/             # 80 test Pest PHP
+│   │   └── Feature/             # 86 test Pest PHP
 │   ├── .env.example
 │   └── README.md
 └── README.md                    # Dokumen ini
@@ -222,13 +222,14 @@ Status: **[Ada]** = sudah terimplementasi, **[Rencana]** = direncanakan.
 1. **[Ada] Katalog Meja Interaktif** — tampilan daftar meja, tipe, harga/jam, dan status ketersediaan
 2. **[Ada] Pemesanan Online dengan Validasi Jadwal** — cegah konflik (*overlap*) dan pemesanan di tanggal/jam lampau
 3. **[Ada] Pembayaran DP via Midtrans** — Snap.js popup (QRIS & Virtual Account), 40% dari total harga
-4. **[Ada] Webhook Otomatis** — sinkronisasi status booking dari Midtrans secara real-time
+4. **[Ada] Webhook Otomatis & Idempotent** — sinkronisasi status booking dari Midtrans secara real-time dan kebal duplikasi
 5. **[Ada] Walk-in Booking (Admin)** — kasir bisa input booking langsung tanpa payment gateway
-6. **[Ada] Riwayat Booking & Pembatalan** — pelanggan bisa melihat histori dan membatalkan booking
+6. **[Ada] Riwayat Booking & Pembatalan** — pelanggan bisa melihat histori dan membatalkan booking secara mandiri
 7. **[Ada] Dashboard Admin** — manajemen meja, semua booking, dan pengaturan aplikasi
 8. **[Ada] RBAC 2 Role** — `user` (pelanggan) dan `admin` (pengelola), dilindungi middleware `IsAdmin`
 9. **[Ada] Custom Popup Modal** — tidak menggunakan `alert()` / `confirm()` bawaan browser
-10. **[Rencana]** Notifikasi email konfirmasi booking
+10. **[Ada] Idempotensi Operasional** — proteksi klik ganda form booking, pelunasan berulang kasir, dan penolakan webhook kadaluarsa terlambat
+11. **[Rencana]** Notifikasi email konfirmasi booking
 
 ---
 
@@ -237,6 +238,7 @@ Status: **[Ada]** = sudah terimplementasi, **[Rencana]** = direncanakan.
 - Session-based authentication via Laravel Breeze
 - Middleware `IsAdmin` melindungi seluruh rute `/admin/*`
 - Webhook Midtrans divalidasi dengan *signature key* (SHA-512)
+- Idempotent webhook handler: mencegah rollback status transaksi dan penolakan notifikasi duplikat
 - CSRF dinonaktifkan hanya untuk endpoint `/webhook/midtrans`
 - Password di-hash dengan `bcrypt`
 - `.env` tidak di-commit (ada di `.gitignore`), `.env.example` hanya template

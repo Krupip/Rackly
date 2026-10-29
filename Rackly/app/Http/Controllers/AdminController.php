@@ -70,9 +70,15 @@ class AdminController extends Controller
         return view('admin.bookings', compact('bookings'));
     }
 
-    // Konfirmasi pelunasan sisa pembayaran oleh kasir/admin
+    // Konfirmasi pelunasan sisa pembayaran oleh kasir/admin (Idempotent)
     public function confirmFullPayment(Booking $booking)
     {
+        // Idempotent: jika sudah lunas, berikan respon sukses tanpa merubah data atau error
+        if ($booking->status === 'lunas') {
+            return redirect()->route('admin.bookings')
+                ->with('success', "Pelunasan untuk Booking #{$booking->id} sudah berstatus lunas.");
+        }
+
         if ($booking->status !== 'dp_lunas') {
             return redirect()->route('admin.bookings')
                 ->with('error', 'Hanya pesanan berstatus "DP Lunas" yang bisa dikonfirmasi pelunasannya.');
@@ -130,6 +136,23 @@ class AdminController extends Controller
 
         $start = Carbon::parse($request->booking_date . ' ' . $request->start_time);
         $end   = Carbon::parse($request->booking_date . ' ' . $request->end_time);
+
+        // Idempotent Walk-in Check:
+        // Jika kasir menekan tombol submit berkali-kali untuk tamu, meja, dan jadwal yang persis sama
+        $existingWalkIn = Booking::whereNull('user_id')
+            ->where('is_walkin', true)
+            ->where('guest_name', $request->guest_name)
+            ->where('billiard_table_id', $table->id)
+            ->where('start_time', $start)
+            ->where('end_time', $end)
+            ->where('status', 'lunas')
+            ->where('created_at', '>=', Carbon::now()->subMinutes(2))
+            ->first();
+
+        if ($existingWalkIn) {
+            return redirect()->route('admin.bookings')
+                ->with('success', "Pesanan walk-in untuk \"{$request->guest_name}\" berhasil ditambahkan.");
+        }
 
         // Cek jadwal bentrok
         $isConflict = Booking::where('billiard_table_id', $table->id)

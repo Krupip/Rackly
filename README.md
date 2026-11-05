@@ -165,7 +165,7 @@ php artisan test
 PASS  Tests\Feature\...
 ...
 
-Tests:    89 passed
+Tests:    91 passed (281 assertions)
 ```
 
 > Kegagalan ditandai dengan `FAIL` dan exit code bukan nol.

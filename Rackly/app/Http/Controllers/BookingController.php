@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Models\BilliardTable;
 use App\Models\Booking;
 use Carbon\Carbon;
@@ -44,6 +45,7 @@ class BookingController extends Controller
         $openHour = Setting::get('open_hour', '10:00');
         $closeHour = Setting::get('close_hour', '23:00');
         $expiryMinutes = (int) Setting::get('dp_expiry_minutes', 15);
+        $maxDuration = (int) Setting::get('max_booking_hours', 5);
 
         // Bersihkan pesanan pending user yang sudah lewat batas waktu toleransi pembayaran
         if (auth()->check()) {
@@ -79,7 +81,7 @@ class BookingController extends Controller
                 ];
             });
 
-        return view('booking.create', compact('billiardTable', 'dpType', 'dpPercentage', 'dpNominal', 'existingBookings', 'openHour', 'closeHour'));
+        return view('booking.create', compact('billiardTable', 'dpType', 'dpPercentage', 'dpNominal', 'existingBookings', 'openHour', 'closeHour', 'maxDuration'));
     }
 
     public function store(Request $request)
@@ -105,6 +107,12 @@ class BookingController extends Controller
 
         // Pastikan waktu yang dipilih belum lewat dari waktu sekarang
         if ($start->isPast()) {
+            Log::warning('booking.past_time_attempt', [
+                'user_id'      => auth()->id(),
+                'table_id'     => $request->table_id,
+                'requested_at' => $start->toDateTimeString(),
+                'server_now'   => Carbon::now()->toDateTimeString(),
+            ]);
             return back()->with('error', 'Maaf, waktu jadwal yang dipilih sudah lewat. Silakan pilih waktu yang akan datang.')->withInput();
         }
 
@@ -148,12 +156,29 @@ class BookingController extends Controller
 
         if ($activePending) {
             $code = '#CP-' . str_pad($activePending->id, 6, '0', STR_PAD_LEFT);
+            Log::warning('booking.denial_of_inventory_attempt', [
+                'user_id'            => auth()->id(),
+                'active_booking_id'  => $activePending->id,
+                'attempted_table_id' => $request->table_id,
+            ]);
             return redirect()->route('booking.checkout', $activePending)
                 ->with('error', "Anda masih memiliki pesanan {$code} yang menunggu pembayaran. Silakan selesaikan pembayaran atau batalkan pesanan tersebut terlebih dahulu sebelum memesan meja lain.");
         }
 
-        // 2. Cek Jadwal Bentrok & Hitung Biaya
+        // 2. Hitung Durasi & Validasi Maksimal Jam Booking (Fair Usage Policy)
         $durationHours = $start->diffInMinutes($end) / 60;
+        $maxDuration = (int) Setting::get('max_booking_hours', 5);
+
+        if ($durationHours > $maxDuration) {
+            Log::warning('booking.max_duration_exceeded', [
+                'user_id'          => auth()->id(),
+                'table_id'         => $request->table_id,
+                'requested_hours'  => $durationHours,
+                'max_hours_allowed'=> $maxDuration,
+            ]);
+            return back()->with('error', "Maaf, durasi booking maksimal adalah {$maxDuration} jam per sesi.")->withInput();
+        }
+
         $totalPrice = $durationHours * $table->price_per_hour;
 
         if ($dpType === 'fixed') {
@@ -174,26 +199,42 @@ class BookingController extends Controller
                 ->exists();
 
             if ($isConflict) {
+                Log::warning('booking.overlap_conflict_detected', [
+                    'user_id'  => auth()->id(),
+                    'table_id' => $table->id,
+                    'start'    => $start->toDateTimeString(),
+                    'end'      => $end->toDateTimeString(),
+                ]);
                 return null;
             }
 
-            return Booking::create([
-                'user_id' => auth()->id(),
-                'billiard_table_id' => $table->id,
-                'start_time' => $start,
-                'end_time' => $end,
-                'total_price' => $totalPrice,
-                'dp_amount' => $dpAmount,
-                'status' => 'pending',
+            $newBooking = Booking::create([
+                'user_id'          => auth()->id(),
+                'billiard_table_id'=> $table->id,
+                'start_time'       => $start,
+                'end_time'         => $end,
+                'total_price'      => $totalPrice,
+                'dp_amount'        => $dpAmount,
+                'status'           => 'pending',
             ]);
+
+            Log::info('booking.created', [
+                'booking_id' => $newBooking->id,
+                'user_id'    => auth()->id(),
+                'table_id'   => $table->id,
+                'start'      => $start->toDateTimeString(),
+                'end'        => $end->toDateTimeString(),
+                'dp_amount'  => $dpAmount,
+            ]);
+
+            return $newBooking;
         });
 
         if (!$booking) {
             return back()->with('error', 'Maaf, jadwal ini sudah dipesan. Silakan pilih jam lain.')->withInput();
         }
 
-        // 5. Konfigurasi Midtrans
-        \Midtrans\Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        // 5. Konfigurasi Midtrans        \Midtrans\Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         \Midtrans\Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
         \Midtrans\Config::$isSanitized = env('MIDTRANS_IS_SANITIZED', true);
         \Midtrans\Config::$is3ds = env('MIDTRANS_IS_3DS', true);
@@ -228,7 +269,11 @@ class BookingController extends Controller
         ];
 
         // 8. Dapatkan Snap Token dari Midtrans
-        $snapToken = \Midtrans\Snap::getSnapToken($params);
+        if (app()->environment('testing')) {
+            $snapToken = 'test-snap-token-' . uniqid();
+        } else {
+            $snapToken = \Midtrans\Snap::getSnapToken($params);
+        }
 
         // Simpan snap_token ke database
         $payment->update(['snap_token' => $snapToken]);
@@ -297,6 +342,12 @@ class BookingController extends Controller
                 $transactionStatus = $request->transaction_status;
                 $booking = $payment->booking;
 
+                Log::info('webhook.midtrans_received', [
+                    'order_id'           => $request->order_id,
+                    'transaction_status' => $transactionStatus,
+                    'booking_id'         => $booking?->id,
+                ]);
+
                 // Idempotent Webhook Processing:
                 // Jika status sukses (settlement/capture) → DP lunas
                 if ($transactionStatus == 'settlement' || $transactionStatus == 'capture') {
@@ -311,6 +362,10 @@ class BookingController extends Controller
                             'status'      => 'dp_lunas',
                             'paid_amount' => $booking->dp_amount,
                         ]);
+                        Log::info('webhook.booking_dp_lunas', [
+                            'booking_id' => $booking->id,
+                            'order_id'   => $request->order_id,
+                        ]);
                     }
                 }
                 // Jika dibatalkan atau kadaluarsa (cancel, expire, deny)
@@ -323,10 +378,24 @@ class BookingController extends Controller
                         }
                         if ($booking->status !== 'cancelled') {
                             $booking->update(['status' => 'cancelled']);
+                            Log::info('webhook.booking_cancelled', [
+                                'booking_id' => $booking->id,
+                                'reason'     => $transactionStatus,
+                                'order_id'   => $request->order_id,
+                            ]);
                         }
                     }
                 }
+            } else {
+                Log::warning('webhook.order_not_found', [
+                    'order_id' => $request->order_id,
+                ]);
             }
+        } else {
+            Log::warning('webhook.signature_mismatch', [
+                'order_id'   => $request->order_id,
+                'ip_address' => $request->ip(),
+            ]);
         }
 
         return response()->json(['message' => 'Webhook handled successfully']);

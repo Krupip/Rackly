@@ -80,7 +80,7 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1"
-        x-data="bookingManager({{ $billiardTable->price_per_hour }}, '{{ $dpType ?? 'percentage' }}', {{ $dpPercentage ?? 30 }}, {{ $dpNominal ?? 50000 }}, {{ json_encode($existingBookings ?? []) }}, '{{ $openHour ?? '10:00' }}', '{{ $closeHour ?? '23:00' }}')">
+        x-data="bookingManager({{ $billiardTable->price_per_hour }}, '{{ $dpType ?? 'percentage' }}', {{ $dpPercentage ?? 30 }}, {{ $dpNominal ?? 50000 }}, {{ json_encode($existingBookings ?? []) }}, '{{ $openHour ?? '10:00' }}', '{{ $closeHour ?? '23:00' }}', {{ $maxDuration ?? 5 }})">
 
         <!-- Breadcrumb & Header with Step Indicator (Sesuai Referensi Figma) -->
         <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
@@ -310,7 +310,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                         <span>
-                                            Slot <strong x-text="startTime + ' – ' + endTime + ' WIB'"></strong> tersedia. Durasi minimum 1 jam, kelipatan 1 jam.
+                                            Slot <strong x-text="startTime + ' – ' + endTime + ' WIB'"></strong> tersedia. Durasi: min. 1 jam, maks. <span x-text="maxDuration"></span> jam.
                                         </span>
                                     </div>
                                 </template>
@@ -456,7 +456,7 @@
     </footer>
 
     <script>
-        function bookingManager(pricePerHour, dpType, dpPct, dpNominal, existingBookings, openHour, closeHour) {
+        function bookingManager(pricePerHour, dpType, dpPct, dpNominal, existingBookings, openHour, closeHour, maxDuration) {
             return {
                 pricePerHour,
                 dpType: dpType || 'percentage',
@@ -465,6 +465,7 @@
                 existingBookings: existingBookings || [],
                 openHour: openHour || '10:00',
                 closeHour: closeHour || '23:00',
+                maxDuration: maxDuration || 5,
                 todayStr: '{{ date('Y-m-d') }}',
                 selectedDate: '{{ (old('booking_date', request('date', date('Y-m-d'))) >= date('Y-m-d')) ? old('booking_date', request('date', date('Y-m-d'))) : date('Y-m-d') }}',
                 calYear: new Date().getFullYear(),
@@ -609,9 +610,10 @@
                     if (!this.startTime) return [];
                     const startH = parseInt(this.startTime.split(':')[0]);
                     const closeH = parseInt(this.closeHour.split(':')[0]);
+                    const maxH = Math.min(closeH, startH + (this.maxDuration || 5));
                     const endSlots = [];
 
-                    for (let h = startH + 1; h <= closeH; h++) {
+                    for (let h = startH + 1; h <= maxH; h++) {
                         const timeStr = String(h).padStart(2, '0') + ':00';
                         // Check if block between startH and h is booked
                         let hasCollision = false;
@@ -674,7 +676,7 @@
                 },
 
                 get isValidTime() {
-                    return this.durationHours > 0;
+                    return this.durationHours > 0 && this.durationHours <= (this.maxDuration || 5);
                 },
 
                 get totalPrice() {

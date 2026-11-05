@@ -181,3 +181,46 @@ test('unauthenticated guest cannot access booking pages', function () {
     $this->get(route('bookings.create', $table))->assertRedirect(route('login'));
     $this->get(route('booking.history'))->assertRedirect(route('login'));
 });
+
+test('user cannot book duration exceeding maximum allowed hours', function () {
+    $user = User::factory()->create();
+    $table = BilliardTable::create([
+        'table_number' => 'Meja Max Duration 01',
+        'type' => 'Reguler',
+        'price_per_hour' => 80000,
+        'is_active' => true,
+    ]);
+
+    // Attempting to book 6 hours (12:00 to 18:00) when default max is 5 hours
+    $response = $this->actingAs($user)->post(route('bookings.store'), [
+        'table_id' => $table->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '12:00',
+        'end_time' => '18:00',
+    ]);
+
+    $response->assertSessionHas('error');
+    expect(Booking::where('user_id', $user->id)->count())->toBe(0);
+});
+
+test('user can book duration within maximum allowed hours', function () {
+    $user = User::factory()->create();
+    $table = BilliardTable::create([
+        'table_number' => 'Meja Max Duration 02',
+        'type' => 'Reguler',
+        'price_per_hour' => 80000,
+        'is_active' => true,
+    ]);
+
+    // Booking 3 hours (13:00 to 16:00) within 5 hours limit
+    $response = $this->actingAs($user)->post(route('bookings.store'), [
+        'table_id' => $table->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '13:00',
+        'end_time' => '16:00',
+    ]);
+
+    $response->assertStatus(200);
+    expect(Booking::where('user_id', $user->id)->count())->toBe(1);
+});
+

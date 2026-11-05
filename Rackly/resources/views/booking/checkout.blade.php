@@ -167,6 +167,16 @@
                             </button>
                         </div>
 
+                        <!-- Cancel Option -->
+                        <div class="pt-1 text-center">
+                            <form action="{{ route('booking.cancel', $booking->id) }}" method="POST" id="cancel-checkout-form" class="inline">
+                                @csrf
+                                <button type="button" onclick="confirmCancelBooking()" class="text-xs text-red-500 hover:text-red-700 font-semibold hover:underline transition py-1 cursor-pointer">
+                                    Batalkan pesanan ini & cari meja/jadwal lain
+                                </button>
+                            </form>
+                        </div>
+
                     </div>
 
                     <!-- Card Footer note -->
@@ -419,6 +429,27 @@
                 });
             };
         }
+
+        function confirmCancelBooking() {
+            showCustomPopup({
+                title: 'Batalkan Pesanan?',
+                message: 'Apakah Anda yakin ingin membatalkan pesanan ini? Meja akan segera dilepas kembali dan Anda dapat memilih meja atau jadwal yang baru.',
+                type: 'error',
+                btnText: 'Ya, Batalkan Pesanan',
+                onConfirm: function () {
+                    document.getElementById('cancel-checkout-form').submit();
+                }
+            });
+        }
+
+        @if(session('error'))
+            showCustomPopup({
+                title: 'Pesanan Menunggu Pembayaran',
+                message: "{{ session('error') }}",
+                type: 'error',
+                btnText: 'Mengerti'
+            });
+        @endif
     </script>
 </body>
 </html>

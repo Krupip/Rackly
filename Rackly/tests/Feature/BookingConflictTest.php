@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\BilliardTable;
 use App\Models\Booking;
+use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
@@ -266,4 +267,121 @@ test('user cannot book a past hour for today', function () {
 
     Carbon::setTestNow(); // reset
 });
+
+test('user cannot create a new booking if they already have an active pending booking', function () {
+    $user = User::factory()->create();
+    $table1 = BilliardTable::create([
+        'table_number' => 'Meja Inventory 01',
+        'type' => 'Reguler',
+        'price_per_hour' => 80000,
+        'is_active' => true,
+    ]);
+    $table2 = BilliardTable::create([
+        'table_number' => 'Meja Inventory 02',
+        'type' => 'VIP',
+        'price_per_hour' => 120000,
+        'is_active' => true,
+    ]);
+
+    $tomorrow = Carbon::tomorrow()->format('Y-m-d');
+
+    // Booking 1: already created and still pending
+    $pendingBooking = Booking::create([
+        'user_id' => $user->id,
+        'billiard_table_id' => $table1->id,
+        'start_time' => Carbon::parse("$tomorrow 14:00:00"),
+        'end_time' => Carbon::parse("$tomorrow 16:00:00"),
+        'total_price' => 160000,
+        'dp_amount' => 48000,
+        'status' => 'pending',
+    ]);
+
+    Payment::create([
+        'booking_id' => $pendingBooking->id,
+        'midtrans_order_id' => 'DP-PENDING-TEST-1',
+        'gross_amount' => 48000,
+        'transaction_status' => 'pending',
+        'snap_token' => 'mock-token-1',
+    ]);
+
+    // User attempts to create Booking 2 on Table 2 while Booking 1 is still pending
+    $response = $this->actingAs($user)->post(route('bookings.store'), [
+        'table_id' => $table2->id,
+        'booking_date' => $tomorrow,
+        'start_time' => '17:00',
+        'end_time' => '19:00',
+    ]);
+
+    // Should be redirected to checkout of existing pending booking with error flash
+    $response->assertRedirect(route('booking.checkout', $pendingBooking));
+    $response->assertSessionHas('error');
+
+    // Total bookings for user must remain 1
+    expect(Booking::where('user_id', $user->id)->count())->toBe(1);
+});
+
+test('user is redirected to active pending checkout when accessing create form', function () {
+    $user = User::factory()->create();
+    $table = BilliardTable::create([
+        'table_number' => 'Meja Form Block 01',
+        'type' => 'Reguler',
+        'price_per_hour' => 80000,
+        'is_active' => true,
+    ]);
+
+    $pendingBooking = Booking::create([
+        'user_id' => $user->id,
+        'billiard_table_id' => $table->id,
+        'start_time' => Carbon::tomorrow()->setHour(10),
+        'end_time' => Carbon::tomorrow()->setHour(12),
+        'total_price' => 160000,
+        'dp_amount' => 48000,
+        'status' => 'pending',
+    ]);
+
+    Payment::create([
+        'booking_id' => $pendingBooking->id,
+        'midtrans_order_id' => 'DP-FORM-TEST-1',
+        'gross_amount' => 48000,
+        'transaction_status' => 'pending',
+        'snap_token' => 'mock-token-form',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('bookings.create', $table));
+
+    $response->assertRedirect(route('booking.checkout', $pendingBooking));
+    $response->assertSessionHas('error');
+});
+
+test('expired pending booking is auto-cancelled and does not block new booking', function () {
+    $user = User::factory()->create();
+    $table = BilliardTable::create([
+        'table_number' => 'Meja Expired Test',
+        'type' => 'Reguler',
+        'price_per_hour' => 80000,
+        'is_active' => true,
+    ]);
+
+    // Create an old pending booking created 30 minutes ago (exceeds default 15 min expiry)
+    $expiredBooking = Booking::create([
+        'user_id' => $user->id,
+        'billiard_table_id' => $table->id,
+        'start_time' => Carbon::tomorrow()->setHour(14),
+        'end_time' => Carbon::tomorrow()->setHour(16),
+        'total_price' => 160000,
+        'dp_amount' => 48000,
+        'status' => 'pending',
+    ]);
+    \Illuminate\Support\Facades\DB::table('bookings')
+        ->where('id', $expiredBooking->id)
+        ->update(['created_at' => Carbon::now()->subMinutes(30)]);
+
+    // User can access create form because expired booking is cleared
+    $response = $this->actingAs($user)->get(route('bookings.create', $table));
+    $response->assertStatus(200);
+
+    // The expired booking must now have status 'cancelled'
+    expect($expiredBooking->fresh()->status)->toBe('cancelled');
+});
+
 

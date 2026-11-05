@@ -43,6 +43,28 @@ class BookingController extends Controller
         $dpNominal = (int) Setting::get('dp_nominal', 50000);
         $openHour = Setting::get('open_hour', '10:00');
         $closeHour = Setting::get('close_hour', '23:00');
+        $expiryMinutes = (int) Setting::get('dp_expiry_minutes', 15);
+
+        // Bersihkan pesanan pending user yang sudah lewat batas waktu toleransi pembayaran
+        if (auth()->check()) {
+            Booking::where('user_id', auth()->id())
+                ->where('status', 'pending')
+                ->where('created_at', '<', Carbon::now()->subMinutes($expiryMinutes))
+                ->update(['status' => 'cancelled']);
+
+            // Denial-of-Inventory Protection:
+            // Cegah penimbunan meja: user tidak bisa membuka form booking baru jika masih punya pesanan pending aktif
+            $activePending = Booking::where('user_id', auth()->id())
+                ->where('status', 'pending')
+                ->latest()
+                ->first();
+
+            if ($activePending) {
+                $code = '#CP-' . str_pad($activePending->id, 6, '0', STR_PAD_LEFT);
+                return redirect()->route('booking.checkout', $activePending)
+                    ->with('error', "Anda masih memiliki pesanan {$code} yang menunggu pembayaran. Silakan selesaikan pembayaran atau batalkan pesanan tersebut terlebih dahulu sebelum memesan meja lain.");
+            }
+        }
 
         // Ambil booking aktif yang sudah ada untuk meja ini
         $existingBookings = Booking::where('billiard_table_id', $billiardTable->id)
@@ -109,6 +131,25 @@ class BookingController extends Controller
             $payment = $existingBooking->payment;
             $snapToken = $payment->snap_token;
             return view('booking.checkout', compact('booking', 'payment', 'snapToken', 'dpType', 'dpPercentage', 'dpNominal'));
+        }
+
+        // Bersihkan pesanan pending user yang sudah lewat batas waktu toleransi pembayaran
+        Booking::where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->where('created_at', '<', Carbon::now()->subMinutes($expiryMinutes))
+            ->update(['status' => 'cancelled']);
+
+        // Denial-of-Inventory Protection:
+        // User tidak boleh membuat pesanan baru jika masih memiliki pesanan berstatus pending aktif
+        $activePending = Booking::where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->latest()
+            ->first();
+
+        if ($activePending) {
+            $code = '#CP-' . str_pad($activePending->id, 6, '0', STR_PAD_LEFT);
+            return redirect()->route('booking.checkout', $activePending)
+                ->with('error', "Anda masih memiliki pesanan {$code} yang menunggu pembayaran. Silakan selesaikan pembayaran atau batalkan pesanan tersebut terlebih dahulu sebelum memesan meja lain.");
         }
 
         // 2. Cek Jadwal Bentrok & Hitung Biaya

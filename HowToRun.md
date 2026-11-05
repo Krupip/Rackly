@@ -178,13 +178,13 @@ Data akun berikut otomatis dibuat saat menjalankan perintah `--seed`:
 Aplikasi telah dilengkapi pengujian otomatis menyeluruh (*Feature & Unit Tests*) berbasis **Pest PHP**:
 
 ```bash
-# Jalankan seluruh 86 pengujian:
+# Jalankan seluruh 89 pengujian:
 php artisan test
 ```
 
 ### Hasil yang Diharapkan:
 ```
-Tests:    86 passed (268 assertions)
+Tests:    89 passed (277 assertions)
 Duration: ~3.80s
 Status:   PASSED
 ```

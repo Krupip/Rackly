@@ -165,7 +165,7 @@ php artisan test
 PASS  Tests\Feature\...
 ...
 
-Tests:    86 passed
+Tests:    89 passed
 ```
 
 > Kegagalan ditandai dengan `FAIL` dan exit code bukan nol.
@@ -207,7 +207,7 @@ Project-RPL/
 │   │   ├── web.php              # Route utama & webhook
 │   │   └── auth.php             # Route autentikasi
 │   ├── tests/
-│   │   └── Feature/             # 86 test Pest PHP
+│   │   └── Feature/             # 89 test Pest PHP
 │   ├── .env.example
 │   └── README.md
 └── README.md                    # Dokumen ini
@@ -229,7 +229,8 @@ Status: **[Ada]** = sudah terimplementasi, **[Rencana]** = direncanakan.
 8. **[Ada] RBAC 2 Role** — `user` (pelanggan) dan `admin` (pengelola), dilindungi middleware `IsAdmin`
 9. **[Ada] Custom Popup Modal** — tidak menggunakan `alert()` / `confirm()` bawaan browser
 10. **[Ada] Idempotensi Operasional** — proteksi klik ganda form booking, pelunasan berulang kasir, dan penolakan webhook kadaluarsa terlambat
-11. **[Rencana]** Notifikasi email konfirmasi booking
+11. **[Ada] Anti Denial-of-Inventory (Slot Hoarding)** — pembatasan 1 pesanan pending aktif per akun dan auto-expiry untuk mencegah penimbunan meja fiktif
+12. **[Rencana]** Notifikasi email konfirmasi booking
 
 ---
 

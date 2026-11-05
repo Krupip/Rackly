@@ -10,7 +10,7 @@ Aplikasi **Rackly** menerapkan pendekatan keamanan berlapis (*defense-in-depth*)
 
 - **Status Pengujian Keamanan:** **100% PASSED** (Seluruh skenario pengujian negatif dan positif berhasil lolos).
 - **Cakupan Pengujian:** Mengacu pada standar industri **OWASP Top 10** (khususnya *Broken Access Control*, *Cryptographic Failures*, *Injection*, *Insecure Design*, *Security Misconfiguration*, dan *Software and Data Integrity Failures*).
-- **Framework Pengujian Otomatis:** Pest PHP (v4.7) / PHPUnit 12 pada Laravel 13 Framework (Total 86 Automated Tests).
+- **Framework Pengujian Otomatis:** Pest PHP (v4.7) / PHPUnit 12 pada Laravel 13 Framework (Total 89 Automated Tests).
 
 ---
 
@@ -30,6 +30,7 @@ Berikut adalah daftar uji keamanan yang telah disimulasikan dan diuji secara oto
 | **SEC-08** | **Cross-Site Request Forgery (CSRF)** | Situs eksternal memicu request POST/PUT/DELETE berbahaya atas nama user yang sedang aktif login. | Seluruh rute aplikasi web dilindungi token CSRF terenkripsi bawaan middleware Laravel. Pengecualian CSRF diisolasi hanya untuk endpoint `/webhook/midtrans` (server-to-server API). | **PASSED** | `bootstrap/app.php` (`validateCsrfTokens(except: ['/webhook/midtrans'])`) |
 | **SEC-09** | **SQL Injection (SQLi) & Mass Assignment** | Penyerang memasukkan query SQL berbahaya pada form input atau memodifikasi atribut database yang tidak diizinkan. | Penggunaan PDO Parameterized Queries otomatis via Eloquent ORM + deklarasi atribut `#[Fillable]` pada setiap Model untuk memblokir injeksi kolom yang tidak sah. | **PASSED** | Seluruh pengujian Unit Model (`BookingTest`, `PaymentTest`, `BilliardTableTest`, `UserTest`) |
 | **SEC-10** | **Cross-Site Scripting (XSS)** | Penyerang memasukkan tag `<script>` atau kode HTML berbahaya pada nama tamu, nomor meja, atau ulasan. | Seluruh template Blade menggunakan escaping otomatis `{{ $variabel }}` (fungsi `htmlspecialchars` di tingkat engine tampilan). | **PASSED** | `ExampleTest`, Blade view rendering tests |
+| **SEC-11** | **Denial-of-Inventory / Slot Hoarding (Multi-Pending Abuse)** | Pengguna iseng membuat banyak pesanan gantung (`pending`) berturut-turut di berbagai meja untuk mengunci ketersediaan meja selama 15 menit tanpa niat membayar. | Pembatasan ketat: user hanya boleh memiliki maksimal 1 pesanan `pending` aktif. Percobaan memesan meja lain langsung dialihkan ke checkout pesanan pending tersebut. Pesanan pending yang melewati batas toleransi otomatis dibatalkan (*auto-cancelled*). | **PASSED** | `BookingConflictTest` (`user_cannot_create_a_new_booking_if_they_already_have_an_active_pending_booking`, `...auto_cancelled_and_does_not_block...`) |
 
 ---
 
@@ -76,6 +77,13 @@ Berikut adalah rekam jejak tindakan perbaikan (*remediation*) dan penguatan keam
 * **Tindakan Perbaikan:**
   - Mengganti seluruh dialog browser bawaan dengan modal pop-up kustom berbasis Alpine.js yang memiliki *backdrop-blur* dan animasi transisi terstandarisasi.
   - Menambahkan visual *disabled state* dan indikator spinner pada seluruh tombol formulir untuk mencegah *double submit*.
+
+### 7. Pencegahan Penimbunan Meja (*Anti Denial-of-Inventory / Slot Hoarding*)
+* **Temuan Awal:** User dapat membuat banyak pesanan gantung (`pending`) di berbagai meja secara simultan, sehingga mengunci ketersediaan meja dari pelanggan lain selama 15 menit tanpa komitmen finansial.
+* **Tindakan Perbaikan:**
+  - Membatasi 1 akun user hanya boleh memiliki maksimal 1 pesanan aktif berstatus `pending`.
+  - Jika user masih memiliki pesanan `pending` aktif, upaya membuka form atau membuat pesanan baru akan langsung dialihkan ke halaman checkout pesanan tersebut dengan pesan peringatan.
+  - Menambahkan pembersihan otomatis (*auto-expiry cleanup*) yang membatalkan pesanan pending yang telah melewati batas toleransi pembayaran (`dp_expiry_minutes`), serta menambahkan tombol pembatalan langsung pada halaman checkout.
 
 ---
 

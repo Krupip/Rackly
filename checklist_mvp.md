@@ -10,8 +10,8 @@ Dokumen ini memuat daftar periksa (*checklist*) seluruh fitur inti Minimum Viabl
 - **Cakupan Fitur:** 100% Selesai Diimplementasikan
 - **Hasil Pengujian Otomatis (Automated Tests):**
   - **Status:** **`PASSED`** (Semua Pengujian Lolos)
-  - **Total Test Cases:** **86 Tests**
-  - **Total Assertions:** **268 Assertions**
+  - **Total Test Cases:** **89 Tests**
+  - **Total Assertions:** **277 Assertions**
   - **Kegagalan (Failed / Error):** **0**
 - **Framework Pengujian:** Pest PHP (v4.7) / PHPUnit 12 pada Laravel 13
 
@@ -48,6 +48,7 @@ Dokumen ini memuat daftar periksa (*checklist*) seluruh fitur inti Minimum Viabl
 | 3.4 | **Reservasi Paralel Antar Meja** | Memperbolehkan pemesanan di jam yang sama asalkan pada nomor meja yang berbeda. | Selesai | **PASSED** | `BookingConflictTest` (`allows_booking_at_the_same_time_on_different_tables`) |
 | 3.5 | **Pencegahan Booking Waktu Lampau (Past Time Prevention)** | Validasi ketat di sisi backend dan frontend: menolak tanggal kemarin serta menolak jam yang sudah lewat untuk hari ini berbasis timezone `Asia/Jakarta`. | Selesai | **PASSED** | `BookingConflictTest` (`user_cannot_book_a_date_in_the_past`, `user_cannot_book_a_past_hour_for_today`) |
 | 3.6 | **Perhitungan Otomatis Biaya & Uang Muka (DP)** | Kalkulasi matematis durasi bermain × tarif/jam, lalu nominal DP dihitung secara akurat dan sisa tagihan dicatat. | Selesai | **PASSED** | `BookingTest` (`calculates_correct_duration_and_total_price...`, `calculates_correct_DP_amount...`) |
+| 3.7 | **Proteksi Anti Penimbunan Meja (*Denial-of-Inventory*)** | Pembatasan 1 pesanan pending per akun untuk mencegah user iseng memblokir banyak meja tanpa membayar, disertai auto-cancel pesanan kedaluwarsa. | Selesai | **PASSED** | `BookingConflictTest` (`user_cannot_create_a_new_booking_if_they_already_have_an_active_pending_booking`, `...auto_cancelled_and_does_not_block...`) |
 
 ---
 
@@ -134,16 +135,16 @@ Test Suite Summary: Pest PHP / PHPUnit
   - PasswordConfirmationTest      : 3 passed
   - PasswordUpdateTest            : 2 passed
   - RegistrationTest              : 2 passed
-  - BookingConflictTest           : 8 passed
+  - BookingConflictTest           : 11 passed
   - BookingFlowTest               : 7 passed
   - ExampleTest                   : 2 passed
   - IdempotencyTest               : 6 passed
   - PaymentConfirmationTest       : 5 passed
   - ProfileTest                   : 5 passed
   - WalkInBookingTest             : 5 passed
-  Subtotal Feature Tests          : 62 passed
+  Subtotal Feature Tests          : 65 passed
 --------------------------------------------------------------------------------
-TOTAL TEST CASES                  : 86 PASSED (268 assertions)
+TOTAL TEST CASES                  : 89 PASSED (277 assertions)
 STATUS AKHIR                      : PASSED
 ================================================================================
 ```

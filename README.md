@@ -30,23 +30,34 @@ Sebelum mulai, pastikan hal berikut sudah terpenuhi:
 
 ---
 
-## Quick Start (Local)
+## Panduan Instalasi Ulang & Akses Aplikasi (Fresh Clone Repo, Build, Deploy Lokal)
 
-### 1. Clone Repository
+Bagian ini memandu proses instalasi ulang dari repositori bersih (*fresh clone*), melakukan build aset, hingga deployment lokal serta mengakses paket demo.
+
+### 1. Fresh Clone Repository
+
+Buka terminal (Git Bash, PowerShell, atau Command Prompt), lalu clone repositori dan masuk ke direktori aplikasi Laravel `Rackly`:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Project-RPL.git
+git clone https://github.com/Krupip/Project-RPL.git
 cd Project-RPL/Rackly
 ```
 
-### 2. Install Dependencies
+### 2. Instalasi Dependensi (Backend & Frontend)
+
+Unduh paket library PHP dan JavaScript yang dibutuhkan:
 
 ```bash
+# Dependensi PHP (Laravel 13, Midtrans SDK, Breeze, Pest PHP)
 composer install
+
+# Dependensi Frontend (Tailwind CSS, Alpine.js, Vite)
 npm install
 ```
 
-### 3. Buat File `.env`
+### 3. Konfigurasi Environment (`.env`)
+
+Salin template konfigurasi `.env.example` menjadi `.env`:
 
 ```bash
 # Linux / macOS / Git Bash
@@ -56,57 +67,98 @@ cp .env.example .env
 Copy-Item .env.example .env
 ```
 
-Lalu buka `.env` dan isi nilainya (lihat bagian [Konfigurasi `.env`](#konfigurasi-env) di bawah).
-
-### 4. Generate Application Key
+Lalu buat Application Encryption Key:
 
 ```bash
 php artisan key:generate
 ```
 
-### 5. Buat Database & Jalankan Migrasi
+> Pastikan kredensial database di `.env` sudah sesuai (default: `DB_DATABASE=cue_reserve`, `DB_USERNAME=root`, `DB_PASSWORD=`). Kredensial Midtrans Sandbox juga sudah tersedia di `.env.example`.
 
-Buat database kosong bernama `cue_reserve` di MySQL, lalu:
+### 4. Database Preparation & Seeding Data Awal
+
+Pastikan service MySQL aktif (misalnya melalui XAMPP atau Laragon), buat database kosong `cue_reserve`, lalu jalankan migrasi dan seeder:
 
 ```bash
-php artisan migrate --seed
+# Perintah migrasi bersih dan pengisian data demo awal
+php artisan migrate:fresh --seed
 ```
 
-Perintah `--seed` otomatis membuat akun admin dan data awal meja.
+Perintah di atas otomatis membuat seluruh tabel, data awal meja biliar, pengaturan tarif DP, serta akun demo admin dan pelanggan.
 
-### 6. Build Asset Frontend
+### 5. Build Aset Frontend
+
+Kompilasi aset CSS dan JavaScript agar siap disajikan:
 
 ```bash
 npm run build
 ```
 
-Atau untuk mode development dengan hot-reload:
+> **Catatan:** Jika Anda sedang melakukan pengembangan aktif dengan hot-reload, Anda dapat menjalankan `npm run dev` pada terminal terpisah.
+
+### 6. Deploy Lokal (Production-Ready Local Deployment)
+
+Untuk mensimulasikan deployment lokal yang optimal, cepat, dan stabil:
 
 ```bash
-npm run dev
+# Buat symlink storage publik jika diperlukan
+php artisan storage:link
+
+# Optimasi caching rute dan template view
+php artisan route:cache
+php artisan view:cache
+
+# (Opsional) Caching konfigurasi lingkungan lokal
+# php artisan config:cache
 ```
 
-### 7. Jalankan Aplikasi
+> **Tips:** Jika ingin kembali ke mode pengembangan murni atau setelah mengubah file konfigurasi / `.env`, bersihkan cache dengan:
+> ```bash
+> php artisan optimize:clear
+> ```
+
+### 7. Menjalankan Server Aplikasi
+
+Jalankan server aplikasi lokal bawaan Laravel:
 
 ```bash
 php artisan serve
 ```
 
-Aplikasi berjalan di `http://localhost:8000`.
+Aplikasi sekarang aktif dan dapat diakses di browser melalui:
+👉 **`http://localhost:8000`** (atau `http://127.0.0.1:8000`)
 
-### 8. (Opsional) Jalankan Tunnel untuk Webhook Midtrans
+### 8. (Opsional) Tunnel Webhook Midtrans Real-Time
 
-Midtrans membutuhkan URL publik untuk mengirim notifikasi pembayaran. Gunakan Ngrok:
+Untuk menguji respon pembayaran otomatis dari Midtrans Simulator ke server lokal Anda:
 
 ```bash
 ngrok http 8000
 ```
 
-Salin URL HTTPS yang diberikan Ngrok (contoh: `https://xxxx.ngrok.io`), lalu set di dashboard Midtrans sebagai **Payment Notification URL**:
+Salin URL HTTPS Ngrok (misal: `https://xxxx.ngrok-free.app`), lalu masukkan pada dashboard Midtrans Sandbox (**Settings** -> **Configuration** -> **Payment Notification URL**):
+```
+https://xxxx.ngrok-free.app/webhook/midtrans
+```
 
-```
-https://xxxx.ngrok.io/webhook/midtrans
-```
+---
+
+## Akses Paket Demo (Demo Package & Scenarios)
+
+Setelah menjalankan `php artisan migrate:fresh --seed`, Anda dapat langsung mendemonstrasikan sistem dengan akun demo berikut:
+
+| Peran (Role) | Email | Password | Hak Akses & Skenario Pengujian |
+| :--- | :--- | :--- | :--- |
+| **Admin / Kasir** | `admin@rackly.com` | `password` | Akses penuh dashboard operasional (`/admin/dashboard`), manajemen meja biliar (CRUD status & harga), pemesanan langsung kasir (*Walk-in Booking*), konfirmasi pelunasan tagihan sisa, dan konfigurasi persentase/nominal DP. |
+| **Pelanggan (User)** | `user@example.com` | `password` | Eksplorasi katalog meja real-time, reservasi online dengan pencegahan tabrakan jadwal (*anti-overlap*), pembayaran DP via pop-up Midtrans Snap, riwayat pesanan, serta pembatalan mandiri. |
+
+### Skenario Alur Pengujian Demo Cepat:
+1. **Pemesanan Pelanggan:** Login sebagai `user@example.com`, pilih meja yang aktif, pilih tanggal & jam sewa (tersedia proteksi jam lampau dan batas maks. 5 jam).
+2. **Checkout & DP:** Lihat kalkulasi DP 40% dan rincian sisa pelunasan di lokasi.
+3. **Pembayaran Midtrans:** Klik **Bayar DP Sekarang**, pop-up Midtrans Snap akan terbuka. Selesaikan simulasi pembayaran di Midtrans Simulator.
+4. **Proteksi Anti Penimbunan:** Coba lakukan pemesanan meja kedua sebelum pesanan pertama dibayar/dibatalkan — sistem akan otomatis mengarahkan kembali ke tagihan pending aktif (*Denial-of-Inventory protection*).
+5. **Pelunasan di Kasir:** Logout dan login sebagai `admin@rackly.com`, buka dashboard, cari pesanan pelanggan tadi yang berstatus `dp_lunas`, lalu klik tombol **Pelunasan** untuk menyelesaikan transaksi.
+6. **Video Demonstrasi:** Dokumentasi dan tautan rekaman video demo alur lengkap dapat dilihat pada file [`demo.md`](demo.md).
 
 ---
 
@@ -140,16 +192,69 @@ MIDTRANS_IS_3DS=true
 
 ---
 
-## Akun Demo
+## Alur Kontribusi & Pengujian Pull Request (PR Workflow & Testing)
 
-Setelah `php artisan migrate --seed`, akun berikut tersedia — password semuanya `password`:
+Untuk menjaga kualitas kode, mencegah regresi, dan memastikan aplikasi selalu dalam kondisi siap deploy (*deployable*), setiap penambahan fitur atau perbaikan bug wajib melalui alur Pull Request (PR) berikut:
 
-| Email                    | Role    | Keterangan                          |
-| :----------------------- | :------ | :---------------------------------- |
-| `admin@rackly.com`       | `admin` | Akses penuh ke dashboard admin      |
-| `user@example.com`       | `user`  | Akun pelanggan untuk booking online |
+### 1. Buat Branch Baru dari `main`
+Sebelum menulis kode baru, pastikan branch `main` berada pada versi teranyar, lalu buat branch fitur terisolasi:
 
-> Gunakan akun `admin` untuk mengelola meja, melihat semua booking, dan konfigurasi pengaturan aplikasi.
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/nama-fitur-baru
+```
+
+### 2. Kembangkan Fitur & Tulis Unit / Feature Test
+Terapkan logika fitur baru beserta pengujian otomatisnya di dalam folder `Rackly/tests/Feature/` atau `Rackly/tests/Unit/`.
+
+### 3. Eksekusi Seluruh Suite Pengujian (Verifikasi All Passed)
+Pastikan seluruh 91 pengujian lulus tanpa ada satu pun kegagalan (*zero failure*):
+
+```bash
+cd Rackly
+php artisan test
+```
+
+> **Kriteria Kelulusan PR:** Seluruh **91 test passed (281 assertions)** harus berstatus hijau (`PASSED`).
+
+### 4. Build Aset Frontend
+Pastikan aset Tailwind CSS dan JavaScript terkompilasi dengan bersih tanpa error sintaks:
+
+```bash
+npm run build
+```
+
+### 5. Commit dan Push Branch ke Remote Repository
+Gunakan format pesan commit konvensional:
+
+```bash
+git add .
+git commit -m "feat: implementasi fitur baru dan penambahan kasus uji"
+git push origin feature/nama-fitur-baru
+```
+
+### 6. Buka Pull Request (PR) di GitHub
+1. Kunjungi repositori GitHub: [https://github.com/Krupip/Project-RPL/pulls](https://github.com/Krupip/Project-RPL/pulls)
+2. Klik tombol **New Pull Request**, pilih base `main` dan compare `feature/nama-fitur-baru`.
+3. Cantumkan ringkasan perubahan, hasil pengujian lokal (`php artisan test: 91 passed`), dan screenshot/demo jika ada perubahan UI.
+4. Tunggu peninjauan kode (*code review*) dan persetujuan (*approval*).
+
+### 7. Penggabungan (Merge) & Deploy Lokal Ulang
+Setelah PR di-merge ke branch `main`, lakukan pembaruan dan deploy lokal pada lingkungan pengujian/produksi:
+
+```bash
+git checkout main
+git pull origin main
+composer install
+npm install
+npm run build
+php artisan migrate
+php artisan optimize:clear
+php artisan route:cache
+php artisan view:cache
+php artisan serve
+```
 
 ---
 
@@ -207,7 +312,7 @@ Project-RPL/
 │   │   ├── web.php              # Route utama & webhook
 │   │   └── auth.php             # Route autentikasi
 │   ├── tests/
-│   │   └── Feature/             # 89 test Pest PHP
+│   │   └── Feature/             # 91 test Pest PHP (281 assertions)
 │   ├── .env.example
 │   └── README.md
 └── README.md                    # Dokumen ini
@@ -263,6 +368,7 @@ Status: **[Ada]** = sudah terimplementasi, **[Rencana]** = direncanakan.
 | [`HowToRun.md`](HowToRun.md) | Panduan langkah demi langkah menjalankan aplikasi dan pengujian |
 | [`checklist_mvp.md`](checklist_mvp.md) | Daftar periksa seluruh fitur MVP beserta status pengujian unit & feature test |
 | [`SECURITY_REPORT.md`](SECURITY_REPORT.md) | Laporan hasil pengujian keamanan (OWASP Top 10) & catatan perubahan yang relevan |
+| [`LOGGING_GUIDE.md`](LOGGING_GUIDE.md) | Panduan log aman, format audit event, penyebab error & tindakan perbaikan |
 | [`demo.md`](demo.md) | Tautan video demonstrasi alur lengkap aplikasi |
 | [`Rackly/.env.example`](Rackly/.env.example) | Template konfigurasi environment |
 | [`Rackly/AGENTS.md`](Rackly/AGENTS.md) | Panduan perilaku AI coding agent untuk proyek ini |

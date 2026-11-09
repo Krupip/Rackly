@@ -21,11 +21,12 @@ Pastikan perangkat Anda telah terinstal perangkat lunak berikut:
 
 ## 2. Langkah-Langkah Menjalankan Aplikasi
 
-### Langkah 1: Masuk ke Direktori Aplikasi
-Buka terminal (PowerShell / Git Bash / Command Prompt), lalu arahkan ke direktori proyek Laravel (`Rackly`):
+### Langkah 1: Clone Repositori & Masuk ke Direktori Aplikasi
+Buka terminal (PowerShell / Git Bash / Command Prompt), lalu clone repositori dan masuk ke direktori proyek Laravel (`Rackly`):
 
 ```bash
-cd Rackly
+git clone https://github.com/Krupip/Project-RPL.git
+cd Project-RPL/Rackly
 ```
 
 ---
@@ -178,7 +179,7 @@ Data akun berikut otomatis dibuat saat menjalankan perintah `--seed`:
 Aplikasi telah dilengkapi pengujian otomatis menyeluruh (*Feature & Unit Tests*) berbasis **Pest PHP**:
 
 ```bash
-# Jalankan seluruh 89 pengujian:
+# Jalankan seluruh 91 pengujian:
 php artisan test
 ```
 

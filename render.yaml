@@ -18,7 +18,7 @@ services:
       - key: DB_PORT
         value: "4000"
       - key: DB_DATABASE
-        value: test
+        value: rackly
       - key: MYSQL_ATTR_SSL_CA
         value: /etc/ssl/certs/ca-certificates.crt
       - key: MIDTRANS_IS_PRODUCTION

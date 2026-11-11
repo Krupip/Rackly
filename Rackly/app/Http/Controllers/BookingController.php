@@ -235,10 +235,14 @@ class BookingController extends Controller
         }
 
         // 5. Konfigurasi Midtrans
-        \Midtrans\Config::$serverKey = config('services.midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY');
-        \Midtrans\Config::$isProduction = config('services.midtrans.is_production', false);
-        \Midtrans\Config::$isSanitized = config('services.midtrans.is_sanitized', true);
-        \Midtrans\Config::$is3ds = config('services.midtrans.is_3ds', true);
+        $serverKey = config('services.midtrans.server_key') ?: (env('MIDTRANS_SERVER_KEY') ?: 'Mid-server-kpr4lBmh3Dyt64i3_NEwDlE0');
+        $clientKey = config('services.midtrans.client_key') ?: (env('MIDTRANS_CLIENT_KEY') ?: 'Mid-client-hgo6sfh7w5AT_UC9');
+
+        \Midtrans\Config::$serverKey = trim($serverKey);
+        \Midtrans\Config::$clientKey = trim($clientKey);
+        \Midtrans\Config::$isProduction = false;
+        \Midtrans\Config::$isSanitized = true;
+        \Midtrans\Config::$is3ds = true;
 
         // Membuat ID Order unik (Contoh: DP-1-1700000000)
         $orderId = 'DP-' . $booking->id . '-' . time();
@@ -329,7 +333,7 @@ class BookingController extends Controller
     public function webhook(Request $request)
     {
         // 1. Ambil Server Key dari config/services atau .env untuk gembok keamanan
-        $serverKey = config('services.midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY');
+        $serverKey = config('services.midtrans.server_key') ?: (env('MIDTRANS_SERVER_KEY') ?: 'Mid-server-kpr4lBmh3Dyt64i3_NEwDlE0');
 
         // 2. Buat rumus validasi (Signature Key)
         $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);

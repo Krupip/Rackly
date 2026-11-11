@@ -350,10 +350,10 @@
             pollingTimer: null,
 
             initRealtime() {
-                // Polling data setiap 3 detik
+                // Polling data setiap 10 detik
                 this.pollingTimer = setInterval(() => {
                     this.fetchDashboard();
-                }, 3000);
+                }, 10000);
             },
 
             async fetchDashboard() {

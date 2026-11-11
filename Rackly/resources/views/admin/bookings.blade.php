@@ -411,7 +411,7 @@
             initRealtime() {
                 this.pollingTimer = setInterval(() => {
                     this.fetchBookings();
-                }, 3000);
+                }, 10000);
             },
 
             get filteredOrders() {

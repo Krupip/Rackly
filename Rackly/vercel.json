@@ -1,6 +1,7 @@
 {
   "version": 2,
   "framework": null,
+  "regions": ["sin1"],
   "buildCommand": "npm run build",
   "outputDirectory": "public",
   "functions": {
@@ -32,7 +33,7 @@
   ],
   "env": {
     "APP_ENV": "production",
-    "APP_DEBUG": "true",
+    "APP_DEBUG": "false",
     "LARAVEL_STORAGE_PATH": "/tmp/storage",
     "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
     "APP_CONFIG_CACHE": "/tmp/bootstrap/cache/config.php",

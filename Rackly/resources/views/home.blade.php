@@ -736,10 +736,10 @@
                 },
 
                 initRealtime() {
-                    // Poll data setiap 4 detik untuk update ketersediaan real-time
+                    // Poll data setiap 12 detik untuk update ketersediaan real-time secara hemat resource
                     this.pollingTimer = setInterval(() => {
                         this.fetchTables();
-                    }, 4000);
+                    }, 12000);
                 },
 
                 async fetchTables() {

@@ -295,7 +295,7 @@
     </div>
 
     <!-- Midtrans Snap Script -->
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('services.midtrans.client_key') ?: env('MIDTRANS_CLIENT_KEY') }}"></script>
     <script type="text/javascript">
         function showCustomPopup({ title, message, type = 'info', btnText = 'OK', onConfirm = null }) {
             const popup = document.getElementById('custom-popup');

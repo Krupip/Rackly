@@ -235,8 +235,8 @@ class BookingController extends Controller
         }
 
         // 5. Konfigurasi Midtrans
-        $serverKey = config('services.midtrans.server_key') ?: (env('MIDTRANS_SERVER_KEY') ?: 'Mid-server-kpr4lBmh3Dyt64i3_NEwDlE0');
-        $clientKey = config('services.midtrans.client_key') ?: (env('MIDTRANS_CLIENT_KEY') ?: 'Mid-client-hgo6sfh7w5AT_UC9');
+        $serverKey = config('services.midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY');
+        $clientKey = config('services.midtrans.client_key') ?: env('MIDTRANS_CLIENT_KEY');
 
         \Midtrans\Config::$serverKey = trim($serverKey);
         \Midtrans\Config::$clientKey = trim($clientKey);
@@ -333,7 +333,7 @@ class BookingController extends Controller
     public function webhook(Request $request)
     {
         // 1. Ambil Server Key dari config/services atau .env untuk gembok keamanan
-        $serverKey = config('services.midtrans.server_key') ?: (env('MIDTRANS_SERVER_KEY') ?: 'Mid-server-kpr4lBmh3Dyt64i3_NEwDlE0');
+        $serverKey = config('services.midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY');
 
         // 2. Buat rumus validasi (Signature Key)
         $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
